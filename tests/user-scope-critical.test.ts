@@ -1,0 +1,25 @@
+import 'fake-indexeddb/auto';
+import {it,expect} from 'vitest';
+import {IndexedDBPersistence} from '../src/offline/Persistence';
+import {AgendaStore} from '../src/stores/AgendaStore';
+import {createEntity} from '../src/models/entities';
+it('same UUID isolation across userScope',async()=>{
+ const scopeA=crypto.randomUUID(),scopeB=crypto.randomUUID();
+ const a=new AgendaStore(new IndexedDBPersistence(scopeA)),b=new AgendaStore(new IndexedDBPersistence(scopeB));
+ await a.boot();await b.boot();
+ const entity=createEntity('Task',{title:'A'}),other=structuredClone(entity);other.fields.title='B';
+ await a.remote([entity]);await b.remote([other]);
+ await a.patch(entity.id,{title:'A edited'});await b.patch(entity.id,{title:'B edited'});
+ const ra=new AgendaStore(new IndexedDBPersistence(scopeA)),rb=new AgendaStore(new IndexedDBPersistence(scopeB));
+ await ra.boot();await rb.boot();
+ expect(ra.entities).toHaveLength(1);expect(rb.entities).toHaveLength(1);
+ expect(ra.entities[0].id).toBe(entity.id);expect(rb.entities[0].id).toBe(entity.id);
+ expect(ra.entities[0].fields.title).toBe('A edited');expect(rb.entities[0].fields.title).toBe('B edited');
+ expect(ra.outbox).toHaveLength(1);expect(rb.outbox).toHaveLength(1);
+ expect(ra.outbox[0].payload.fields.title).toBe('A edited');expect(rb.outbox[0].payload.fields.title).toBe('B edited');
+ await ra.service.delete(entity.id);await rb.refresh();
+ expect(ra.entities[0].lifecycle).toBe('deleted');expect(rb.entities[0].lifecycle).toBe('active');
+ await ra.persistence.clear();await ra.refresh();await rb.refresh();
+ expect(ra.entities).toEqual([]);expect(ra.outbox).toEqual([]);
+ expect(rb.entities[0].fields.title).toBe('B edited');expect(rb.outbox).toHaveLength(1);
+});
