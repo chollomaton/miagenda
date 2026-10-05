@@ -1,3 +1,4 @@
+import {useLaunchActions} from '../commands/useLaunchActions';
 import {TemplatesPanel} from '../components/TemplatesPanel';
 import {AlertField,LabelSelector} from '../components/EntityFields';
 import {templateToDraft} from '../models/templateDraft';
@@ -54,7 +55,6 @@ export function App({providedStore,cloudControls,onCloudLogout}:{providedStore?:
  const prefs=select(store.entities,{kind:'Preferences'})[0]?.fields??defaults(),today=dateInZone(new Date().toISOString(),prefs.timezone),tomorrow=addDays(today,1),calendarView=viewOverride??prefs.calendarView;
  const run=(promise:Promise<unknown>)=>{void promise.catch(()=>setMessage('No se pudo guardar. Revisa los datos o recarga si tienes otra pestaña abierta; los cambios anteriores se conservan.'))};
  useEffect(()=>{if(entered&&store.status==='booting')void store.boot();return auth.onInvalidate(()=>store.detach())},[entered,store,auth]);
- useEffect(()=>{const handler=(e:KeyboardEvent)=>{if((e.metaKey||e.ctrlKey)&&!e.altKey&&!e.shiftKey&&e.key.toLowerCase()==='k'&&entered&&!editor&&!quickCapture){e.preventDefault();setMore(false);setSearchQuery('');setCommandIndex(0);setSearch(v=>!v)}if(e.key==='Escape'){setSearch(false);setSearchQuery('');setCommandIndex(0);setMore(false);setQuickCapture(false)} };window.addEventListener('keydown',handler);return ()=>window.removeEventListener('keydown',handler)},[entered,editor,quickCapture]);
  useEffect(()=>{if(!entered)return;const refresh=()=>{void store.flush().then(()=>store.refresh()).catch(()=>{})};window.addEventListener('focus',refresh);window.addEventListener('online',refresh);return ()=>{window.removeEventListener('focus',refresh);window.removeEventListener('online',refresh)}},[entered,store]);
  useAppearance(prefs.theme,prefs.density);
  useEffect(()=>{const viewport=window.visualViewport;if(!viewport)return;const resize=()=>{document.documentElement.style.setProperty('--visible-height',viewport.height+'px');document.documentElement.style.setProperty('--visible-top',viewport.offsetTop+'px')};resize();viewport.addEventListener('resize',resize);viewport.addEventListener('scroll',resize);return ()=>{viewport.removeEventListener('resize',resize);viewport.removeEventListener('scroll',resize);document.documentElement.style.removeProperty('--visible-height');document.documentElement.style.removeProperty('--visible-top')}},[]);
@@ -62,6 +62,15 @@ export function App({providedStore,cloudControls,onCloudLogout}:{providedStore?:
  async function logout(){await store.flush();if(onCloudLogout){await onCloudLogout();return}await auth.signOut();setEditor(null);setSearch(false);setSearchQuery('');setQuery('');setSelection([]);setBackup(null);setEntered(false)}
  const open=(e:Entity)=>{if(e.kind==='Label'&&section==='Etiquetas')setLabelDetail({entity:e});else setEditor({kind:e.kind,entity:e})};
  function newItem(kind:Kind){if(kind==='Label'&&section==='Etiquetas'){setLabelDetail({});return}if(kind==='QuickNote')run(store.create(kind).then(e=>{if(e.kind!=='Template')open(e)}));else setEditor({kind})}
+ const navigate=(name:Section)=>{setSection(name);setMore(false);setSettingsDetail(false);setLabelDetail(null);setFilter('Todas');setQuery('');setLabel('');setSelection([])};
+ function closeSearch(){setSearch(false);setSearchQuery('');setCommandIndex(0)}
+ const commands=createCommandRegistry({
+  'task.new':()=>newItem('Task'),'reminder.new':()=>newItem('Reminder'),
+  'event.new':()=>newItem('Event'),'note.new':()=>newItem('QuickNote'),
+  'quickCapture.open':()=>setQuickCapture(true),
+  'calendar.today':()=>{navigate('Calendario');setCalendarDate(today)},
+ });
+ useLaunchActions({ready:entered&&store.status==='ready',commands,blocked:!!editor||quickCapture||search,openPalette:()=>{setMore(false);setSearchQuery('');setCommandIndex(0);setSearch(true)},closeOverlays:()=>{closeSearch();setMore(false);setQuickCapture(false)}});
  const active=select(store.entities);const labelEntities=select(store.entities,{kind:'Label'});
  async function preference(patch:Partial<Fields>){const old=select(store.entities,{kind:'Preferences'})[0];if(old)await store.patch(old.id,patch);else await store.create('Preferences',patch)}
  function item(e:Entity){return <article className={'item tone-'+e.kind+' '+(e.fields.completed?'completed':'')} key={e.id}><div className="item-leading">{section==='Completados'?<span className="section-glyph completed-glyph"><Icon name="completed"/></span>:['Task','Subtask','Reminder'].includes(e.kind)?<input aria-label={'Completar '+e.fields.title} type="checkbox" checked={e.fields.completed} onChange={v=>run(store.complete(e.id,v.target.checked))}/>:<span aria-hidden="true"><Icon name={e.fields.pinned?'pin':e.kind==='Event'?'calendar':e.kind==='QuickNote'?'notes':'labels'}/></span>}</div><button className="item-body" onClick={()=>open(e)}><strong>{e.fields.title||e.fields.text.slice(0,70)||'Sin título'}</strong>{section==='Notas'&&<span className="note-preview">{e.fields.text||'Sin contenido'}</span>}<small>{section==='Notas'?new Intl.DateTimeFormat('es',{timeZone:prefs.timezone,dateStyle:'medium'}).format(new Date(e.updatedAt)):names[e.kind]} {e.fields.due?'· '+new Intl.DateTimeFormat('es',{timeZone:prefs.timezone,dateStyle:'short',timeStyle:'short',hour12:!prefs.hour24}).format(new Date(e.fields.due)):''} {e.fields.priority>0?'· '+['','Baja','Media','Alta'][e.fields.priority]:''} {e.fields.labelIDs.map(id=>labelEntities.find(l=>l.id===id)?.fields.title).filter(Boolean).join(' · ')}</small></button>{section==='Completados'&&<button className="quiet reopen-action" onClick={()=>run(store.complete(e.id,false))}>Reabrir</button>}<button aria-label={'Fijar '+e.fields.title} onClick={()=>run(store.patch(e.id,{pinned:!e.fields.pinned}))}><Icon name="pin"/></button><details className="context-menu"><summary aria-label={'Acciones '+e.fields.title}>⋯</summary><div><button onClick={()=>run(store.duplicate(e.id))}>Duplicar</button><button onClick={()=>run(store.service.delete(e.id))}>Eliminar</button><button onClick={()=>run(store.service.reorder([e.id,...filtered.filter(v=>v.id!==e.id).map(v=>v.id)]))}>Mover al principio</button></div></details>{section==='Tareas'&&<input type="checkbox" aria-label={'Seleccionar '+e.fields.title} checked={selection.includes(e.id)} onChange={v=>setSelection(v.target.checked?[...selection,e.id]:selection.filter(id=>id!==e.id))}/>}</article>}
@@ -72,7 +81,6 @@ export function App({providedStore,cloudControls,onCloudLogout}:{providedStore?:
  const scheduledBlocks=active.flatMap(e=>{const block=scheduledTaskBlock(e);return block?[block]:[]});
  const calItems=active.filter(e=>['Event','Reminder','Task'].includes(e.kind)&&(!(['Día','Semana'].includes(calendarView)&&section!=='Agenda')||e.kind!=='Task')).flatMap(e=>occurrences(e,addDays(calendarDays[0],-366),addDays(calendarDays.at(-1)!,1)));
  const currentKind:Kind=section==='Notas'?'QuickNote':section==='Etiquetas'?'Label':section==='Recordatorios'?'Reminder':section==='Calendario'||section==='Agenda'?'Event':'Task';
- const navigate=(name:Section)=>{setSection(name);setMore(false);setSettingsDetail(false);setLabelDetail(null);setFilter('Todas');setQuery('');setLabel('');setSelection([])};
  function captureDraft(result:QuickCaptureResult){
   const kind:Kind=({task:'Task',reminder:'Reminder',event:'Event',note:'QuickNote'} as const)[result.kind];
   const draft:Partial<Fields>={title:result.title,labelIDs:result.labelIDs,priority:result.priority?{alta:3,media:2,baja:1}[result.priority]:0};
@@ -96,13 +104,6 @@ export function App({providedStore,cloudControls,onCloudLogout}:{providedStore?:
    setEditor({kind:result.kind,date:today,draft,durationMinutes:'durationMinutes' in result?result.durationMinutes:undefined});
   }catch{setMessage('No se pudo abrir la plantilla. Revisa sus campos.')}
  }
- function closeSearch(){setSearch(false);setSearchQuery('');setCommandIndex(0)}
- const commands=createCommandRegistry({
-  'task.new':()=>newItem('Task'),'reminder.new':()=>newItem('Reminder'),
-  'event.new':()=>newItem('Event'),'note.new':()=>newItem('QuickNote'),
-  'quickCapture.open':()=>setQuickCapture(true),
-  'calendar.today':()=>{navigate('Calendario');setCalendarDate(today)},
- });
  const paletteItems=[
   ...matchingCommands(commands,searchQuery).map(command=>({id:command.id,label:command.label,execute:command.execute})),
   ...templateCommands(store.entities,searchQuery,applyTemplate),
