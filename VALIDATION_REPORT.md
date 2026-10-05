@@ -38,3 +38,77 @@ Validación ejecutada con el runtime Node disponible y dependencias locales exis
 - `git diff --check`: PASS.
 
 Certificación **local automatizada** del alcance probado. No se realizaron instalación PWA/manual en navegadores, pruebas multidispositivo, Firebase real ni despliegue. La descarga de seguridad se inicia antes del reemplazo; las APIs del navegador no confirman su guardado efectivo en disco. Sin push.
+
+## Intento de certificación manual Browser/PWA — 2026-10-05
+
+### Base observada
+
+Ruta de trabajo `/Users/carlos/Documents/Codex/miagenda`; rama `main`; HEAD
+`61c6218616f958a4abb294bffedc660f04a4314b`; `git status --porcelain=v1`
+vacío y `git remote -v` vacío antes de ejecutar checks. Coincide con la base
+solicitada. La certificación automatizada de 440 tests de la sección anterior
+es histórica; no se volvió a ejecutar esa suite en este intento.
+
+### Bloqueo observado del navegador
+
+No hay herramienta de interacción/inspección de navegador expuesta en esta sesión.
+Chrome y Firefox están instalados. Un único intento de lanzar Chrome real con
+Playwright disponible en el runtime local, perfil temporal independiente y
+`headless: true`, abortó antes de poder abrir `about:blank`:
+`browserType.launch: Target page, context or browser has been closed`.
+El registro muestra proceso lanzado, terminación con `signal=SIGABRT` y
+`exception while trying to kill process: Error: kill EPERM`.
+La causa interna del aborto no está determinada; no se atribuye a la aplicación.
+No se repitió el lanzamiento ni se cambió el perfil habitual del usuario.
+No se llegó a abrir la app en un navegador ni a interactuar con su UI.
+
+### Resultados manuales
+
+- **Desktop browser: BLOCKED / PENDIENTE.** Sin resultados observados de arranque,
+  Dashboard, Task crear/editar/completar/reabrir/eliminar/restaurar, Reminder CRUD,
+  Event CRUD, Quick Note, Labels, CmdK abrir/cerrar/navegar/Enter/Esc/restaurar foco,
+  Quick Capture parsear y llevar a editor, Templates crear/editar/usar/guardar,
+  Time Blocking planificar/modificar/quitar y Day/Week, Radar counts/desplegar/abrir,
+  URL actions new-task/new-reminder/new-event/today y limpieza de action,
+  shortcuts teclado, ni exportación/lectura/importación segura de ZIP desde UI.
+- **Responsive/mobile: BLOCKED / PENDIENTE.** No se visualizaron anchos 1280, 834,
+  393. Pendientes a 393: navegación, overflow de modales/editor, touch targets,
+  safe area/100dvh, calendario, Templates Settings, Time Blocking dialog,
+  CmdK y Quick Capture.
+- **PWA/offline: BLOCKED / PENDIENTE.** No se observaron instalación/standalone,
+  shell offline después de visita previa, creación/edición offline, persistencia
+  tras reload offline, reconexión ni actualización de SW conservando drafts/datos.
+  Archivos generados correctos no demuestran estos comportamientos.
+- **Multi-tab local: BLOCKED / PENDIENTE.** Sin dos pestañas reales no se observaron
+  convergencia, locks ni ausencia de duplicación indebida de outbox.
+
+### Checks complementarios realmente ejecutados
+
+Con Node del runtime local y dependencias existentes, sin instalación:
+
+- `tsc --noEmit`: PASS.
+- `vite build`: PASS; persiste el aviso de chunk mayor de 500 kB.
+- `node scripts/build-shell.mjs`: PASS.
+- Inspección mediante assertions de archivos de build: PASS. Manifest distribuido
+  idéntico al público; cuatro shortcuts con URLs esperadas; assets con base
+  `/miagenda/`; iconos referenciados presentes; worker generado incluye shell
+  index y manifest. Esto es comprobación de artefactos, no certificación PWA.
+- `git diff --check`: PASS antes y después de actualizar este informe.
+
+No se encontraron bugs de aplicación mediante interacción, porque esta quedó
+bloqueada. No hubo fixes ni tests de regresión ni commit nuevo. HEAD sin cambios.
+Único cambio versionado previsto al cerrar: este informe; árbol dirty por
+`VALIDATION_REPORT.md`. Sin push, cambios de versión, tag, nuevas features,
+certificación Firebase real ni production smoke.
+
+### Siguiente paso mínimo: checklist manual en navegador externo
+
+Servir el build con `vite preview --host 127.0.0.1` desde la ruta canónica y abrir
+`http://127.0.0.1:4173/miagenda/` en Chrome con un perfil de pruebas aislado.
+Ejecutar todos los elementos pendientes de las cuatro fases anteriores; usar
+sólo datos sintéticos para export/import y ambas pestañas del mismo perfil/scope.
+Para offline y update, conservar ese perfil entre visita, desconexión, reload,
+reconexión y cambio del worker. Registrar resultado y evidencia por prueba;
+instalación real y safe areas requieren además el dispositivo compatible.
+La certificación Firebase real queda para después de cerrar estas fases y disponer
+de proyecto/credenciales reales.
