@@ -1,0 +1,10 @@
+.search-dialog:has(.quick-capture){width:600px;max-width:100%}
+.quick-capture header,.quick-capture footer{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.quick-capture h2{margin:0;font-size:22px}
+.capture-preview{background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:16px;overflow-wrap:anywhere}
+.capture-preview p{white-space:pre-wrap}
+.capture-preview dl{display:grid;grid-template-columns:auto 1fr;gap:8px 16px;margin-bottom:0}
+.capture-preview dd{margin:0}.capture-preview dt{color:var(--muted)}
+.quick-capture fieldset button{margin:4px;min-height:44px}
+.quick-capture footer{margin-top:24px;flex-wrap:wrap}.quick-capture footer button{min-height:44px}
+@media(max-width:699px){.search-dialog:has(.quick-capture){width:100%;min-height:100dvh}.quick-capture footer button{flex:1}}

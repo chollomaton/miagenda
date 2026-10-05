@@ -46,3 +46,5 @@ main#main{padding:24px var(--page-padding) 50px;max-width:1600px}.page-header{ma
 .dashboard .card-heading small{color:var(--text-secondary);font-size:var(--font-caption)}
 
 .primary{color:#fff;background:var(--accent);border-color:transparent}
+
+.search-result[aria-selected=true]{background:var(--soft);color:var(--accent)}
