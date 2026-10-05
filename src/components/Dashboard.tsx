@@ -1,10 +1,11 @@
 import {useState} from 'react';
 import type {ReactNode} from 'react';
-import type {Entity,Fields,Kind} from '../models/entities';
+import type {AgendaEntity as Entity,Fields} from '../models/entities';
 import {addDays,coversDate,occurrences,wallTime} from '../utils/calendar';
 import {select} from '../search/selectors';
 import {Icon} from './Icon';
 import type {IconName} from './Icon';
+type Kind=Entity['kind'];
 type Destination='Tareas'|'Recordatorios'|'Calendario'|'Notas';
 export function Dashboard({entities,today,prefs,onOpen,onCreate,onNavigate,renderList,onMessage}:{entities:Entity[];today:string;prefs:Fields;onOpen:(e:Entity)=>void;onCreate:(kind:Kind)=>void;onNavigate:(section:Destination)=>void;renderList:(items:Entity[])=>ReactNode;onMessage:(message:string)=>void}){
  const [mode,setMode]=useState<'Semana'|'Mes'>('Semana'),[selected,setSelected]=useState(today);
