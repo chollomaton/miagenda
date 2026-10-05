@@ -48,3 +48,8 @@ main#main{padding:24px var(--page-padding) 50px;max-width:1600px}.page-header{ma
 .primary{color:#fff;background:var(--accent);border-color:transparent}
 
 .search-result[aria-selected=true]{background:var(--soft);color:var(--accent)}
+
+.radar-card{grid-column:1/-1;align-self:start}
+.radar-card summary{cursor:pointer;min-height:44px;padding:12px 0;font-size:13px}
+.radar-card h4{margin:16px 0 8px}
+.radar-card .summary-entry{overflow-wrap:anywhere}
