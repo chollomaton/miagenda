@@ -9,14 +9,18 @@ export interface Fields {
  location: string; url: string; alerts: number[]; recurrence: Recurrence|null; color: string; icon: string;
  theme: 'system'|'light'|'dark'; weekStart: number; hour24: boolean; calendarView: 'Día'|'Semana'|'Mes'|'Agenda'; eventDuration: number; defaultAlert: number; density: 'comfortable'|'compact'; language: string;
 }
-export interface Entity { id: string; kind: Kind; schemaVersion: 1; createdAt: string; updatedAt: string; lifecycle: 'active'|'deleted'; fieldClocks: Record<string,Clock>; fields: Fields }
+export interface TaskScheduling { scheduledStartAt?: string|null; scheduledDurationMinutes?: number|null; scheduledTimezone?: string|null }
+export const schedulingKeys = ['scheduledStartAt','scheduledDurationMinutes','scheduledTimezone'] as const;
+export type EditableFields = Fields & TaskScheduling;
+interface BaseEntity { id: string; kind: Kind; schemaVersion: 1; createdAt: string; updatedAt: string; lifecycle: 'active'|'deleted'; fieldClocks: Record<string,Clock>; fields: Fields }
+export type Entity = BaseEntity & ({kind:'Task';fields:EditableFields}|{kind:Exclude<Kind,'Task'>;fields:Fields});
 export type Task = Entity & {kind:'Task'}; export type Subtask = Entity & {kind:'Subtask'}; export type Reminder = Entity & {kind:'Reminder'}; export type Event = Entity & {kind:'Event'}; export type QuickNote = Entity & {kind:'QuickNote'}; export type Label = Entity & {kind:'Label'}; export type Preferences = Entity & {kind:'Preferences'};
 export const clone = <T,>(v:T):T => structuredClone(v);
 export function compare(a:Clock,b:Clock):number {return a.physicalMilliseconds-b.physicalMilliseconds || a.logical-b.logical || (a.writerID<b.writerID?-1:a.writerID>b.writerID?1:0)}
 export function nextClock(writerID:string, clocks:Clock[], now=Date.now()):Clock { const max=clocks.reduce<Clock>((a,b)=>compare(a,b)>0?a:b,{physicalMilliseconds:0,logical:0,writerID}); return {physicalMilliseconds:Math.max(now,max.physicalMilliseconds),logical:now>max.physicalMilliseconds?0:max.logical+1,writerID}; }
 export function defaults():Fields {return {title:'',notes:'',text:'',completed:false,completedAt:null,priority:0,pinned:false,labelIDs:[],sortOrder:0,parentTaskId:null,parentLabelId:null,due:null,start:null,end:null,allDay:false,startDate:null,endDate:null,timezone:'Europe/Madrid',location:'',url:'',alerts:[0],recurrence:null,color:'#3478f6',icon:'●',theme:'system',weekStart:1,hour24:true,calendarView:'Mes',eventDuration:60,defaultAlert:15,density:'comfortable',language:'es'};}
-export function createEntity(kind:Kind, fields:Partial<Fields>={}, writerID='local'):Entity {const now=new Date().toISOString(), f={...defaults(),...fields}; const clock=nextClock(writerID,[]); const entity:Entity={id:crypto.randomUUID(),kind,schemaVersion:1,createdAt:now,updatedAt:now,lifecycle:'active',fields:f,fieldClocks:Object.fromEntries([...Object.keys(f),'lifecycle'].map(k=>[k,clock]))}; validate(entity); return entity;}
-export function updateEntity(entity:Entity, patch:Partial<Fields>,writerID:string,lifecycle=entity.lifecycle):Entity {const e=clone(entity); const clock=nextClock(writerID,Object.values(e.fieldClocks)); for(const key of Object.keys(patch) as (keyof Fields)[]) {if(!(key in defaults()))throw Error('UNKNOWN_FIELD');if(JSON.stringify(e.fields[key])===JSON.stringify(patch[key]))continue; Object.assign(e.fields,{[key]:patch[key]}); e.fieldClocks[key]=clock;} if(lifecycle!==e.lifecycle){e.lifecycle=lifecycle;e.fieldClocks.lifecycle=clock;} if(Object.keys(e.fieldClocks).some(key=>compare(e.fieldClocks[key],entity.fieldClocks[key])!==0))e.updatedAt=new Date(clock.physicalMilliseconds).toISOString(); validate(e);return e;}
+export function createEntity(kind:Kind, fields:Partial<EditableFields>={}, writerID='local'):Entity {const now=new Date().toISOString(), f={...defaults(),...fields}; const clock=nextClock(writerID,[]); const entity:Entity={id:crypto.randomUUID(),kind,schemaVersion:1,createdAt:now,updatedAt:now,lifecycle:'active',fields:f,fieldClocks:Object.fromEntries([...Object.keys(f),'lifecycle'].map(k=>[k,clock]))}; validate(entity); return entity;}
+export function updateEntity(entity:Entity, patch:Partial<EditableFields>,writerID:string,lifecycle=entity.lifecycle):Entity {const e=clone(entity); const clock=nextClock(writerID,Object.values(e.fieldClocks)); for(const key of Object.keys(patch) as (keyof EditableFields)[]) {if(!(key in defaults())&&!(entity.kind==='Task'&&schedulingKeys.includes(key as typeof schedulingKeys[number])))throw Error('UNKNOWN_FIELD');if(JSON.stringify((e.fields as EditableFields)[key])===JSON.stringify(patch[key])||(schedulingKeys.includes(key as typeof schedulingKeys[number])&&(e.fields as EditableFields).scheduledStartAt==null&&patch.scheduledStartAt==null&&(e.fields as EditableFields)[key]==null&&patch[key]==null))continue; Object.assign(e.fields,{[key]:patch[key]}); e.fieldClocks[key]=clock;} if(lifecycle!==e.lifecycle){e.lifecycle=lifecycle;e.fieldClocks.lifecycle=clock;} if(Object.keys(e.fieldClocks).some(key=>(!entity.fieldClocks[key]||compare(e.fieldClocks[key],entity.fieldClocks[key])!==0)))e.updatedAt=new Date(clock.physicalMilliseconds).toISOString(); validate(e);return e;}
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 export function civil(s:unknown):s is string {if(typeof s!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(s))return false;const d=new Date(s+'T00:00:00Z');return Number.isFinite(+d)&&d.toISOString().slice(0,10)===s;}
 export function utc(s:unknown):s is string{return typeof s==='string'&&/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(s)&&Number.isFinite(Date.parse(s))&&new Date(s).toISOString()===s;}
@@ -24,7 +28,21 @@ export function safeURL(s:string):string {if(!s)return '';try{const u=new URL(s)
 export function validate(value:unknown):asserts value is Entity {
  if(!value||typeof value!=='object')throw Error('INVALID_ENTITY'); const e=value as Entity;if(Object.keys(e).sort().join(',')!==['id','kind','schemaVersion','createdAt','updatedAt','lifecycle','fieldClocks','fields'].sort().join(','))throw Error('UNKNOWN_METADATA');
  if(!uuid.test(e.id)||!kinds.includes(e.kind)||e.schemaVersion!==1||!utc(e.createdAt)||!utc(e.updatedAt)||!['active','deleted'].includes(e.lifecycle)||!e.fields||!e.fieldClocks)throw Error('INVALID_SCHEMA');
- const f=e.fields,d=defaults();if(Object.keys(e.fieldClocks).sort().join(',')!==[...Object.keys(d),'lifecycle'].sort().join(','))throw Error('UNKNOWN_CLOCK');if(Object.keys(f).length!==Object.keys(d).length)throw Error('UNKNOWN_FIELDS');
+ const f=e.fields as EditableFields,d=defaults();
+ const optional:readonly typeof schedulingKeys[number][]=e.kind==='Task'?schedulingKeys:[];
+ const fieldKeys=Object.keys(f),clockKeys=Object.keys(e.fieldClocks);
+ if(clockKeys.some(k=>k!=='lifecycle'&&!(k in d)&&!optional.includes(k as typeof schedulingKeys[number]))||[...Object.keys(d),'lifecycle'].some(k=>!clockKeys.includes(k)))throw Error('UNKNOWN_CLOCK');
+ if(fieldKeys.some(k=>!(k in d)&&!optional.includes(k as typeof schedulingKeys[number]))||Object.keys(d).some(k=>!fieldKeys.includes(k)))throw Error('UNKNOWN_FIELDS');
+ const present=schedulingKeys.filter(k=>Object.hasOwn(f,k));
+ const clocks=schedulingKeys.filter(k=>Object.hasOwn(e.fieldClocks,k));
+ if(present.length||clocks.length){
+  if(e.kind!=='Task'||present.length!==3||clocks.length!==3)throw Error('INVALID_SCHEDULING');
+  if(f.scheduledStartAt===null){if(f.scheduledDurationMinutes!==null||f.scheduledTimezone!==null)throw Error('INVALID_SCHEDULING');}
+  else {
+   if(!utc(f.scheduledStartAt)||typeof f.scheduledDurationMinutes!=='number'||!Number.isFinite(f.scheduledDurationMinutes)||f.scheduledDurationMinutes<=0||typeof f.scheduledTimezone!=='string'||!f.scheduledTimezone||/^[+-]/.test(f.scheduledTimezone))throw Error('INVALID_SCHEDULING');
+   try{new Intl.DateTimeFormat('en',{timeZone:f.scheduledTimezone}).format()}catch{throw Error('INVALID_SCHEDULING')}
+  }
+ }
  for(const key of Object.keys(d) as (keyof Fields)[]) {const v=f[key];if(typeof d[key]==='string'&&(typeof v!=='string'||v.length>100000))throw Error('INVALID_TEXT');if(typeof d[key]==='boolean'&&typeof v!=='boolean')throw Error('INVALID_BOOLEAN');if(typeof d[key]==='number'&&(typeof v!=='number'||!Number.isFinite(v)))throw Error('INVALID_NUMBER');}
  if(f.title.length>500||f.icon.length>20||f.location.length>2000||f.url.length>4000)throw Error('TEXT_TOO_LONG');
  if(!Array.isArray(f.labelIDs)||f.labelIDs.some(id=>!uuid.test(id))||!Array.isArray(f.alerts)||f.alerts.some(n=>!Number.isInteger(n)||n<0||n>525600))throw Error('INVALID_LIST');
@@ -37,7 +55,18 @@ export function validate(value:unknown):asserts value is Entity {
  if(e.kind==='Subtask'&&!f.parentTaskId)throw Error('MISSING_PARENT');
  if(e.kind==='Event'&& (f.allDay?(!f.startDate||!f.endDate||f.endDate<=f.startDate):(!f.start||!f.end||f.end<=f.start)))throw Error('INVALID_EVENT_RANGE');
  if(e.kind==='Reminder'&&!f.due)throw Error('MISSING_DUE');
- for(const key of [...Object.keys(d),'lifecycle']){const c=e.fieldClocks[key];if(!c||Object.keys(c).sort().join(',')!=='logical,physicalMilliseconds,writerID'||!Number.isSafeInteger(c.physicalMilliseconds)||c.physicalMilliseconds<0||!Number.isSafeInteger(c.logical)||c.logical<0||typeof c.writerID!=='string'||!c.writerID||c.writerID.length>200)throw Error('INVALID_CLOCK');}
+ for(const key of clockKeys){const c=e.fieldClocks[key];if(!c||Object.keys(c).sort().join(',')!=='logical,physicalMilliseconds,writerID'||!Number.isSafeInteger(c.physicalMilliseconds)||c.physicalMilliseconds<0||!Number.isSafeInteger(c.logical)||c.logical<0||typeof c.writerID!=='string'||!c.writerID||c.writerID.length>200)throw Error('INVALID_CLOCK');}
  if(f.recurrence){const r=f.recurrence;if(!['daily','weekly','monthly','yearly'].includes(r.frequency)||!Number.isInteger(r.interval)||r.interval<1||r.interval>366||!Array.isArray(r.weekdays)||r.weekdays.some(v=>!Number.isInteger(v)||v<0||v>6)||r.monthDay!==null&&(!Number.isInteger(r.monthDay)||r.monthDay<1||r.monthDay>31)||r.count!==null&&(!Number.isInteger(r.count)||r.count<1||r.count>10000)||r.until!==null&&!civil(r.until)||!Array.isArray(r.exceptions)||r.exceptions.some(v=>!civil(v)))throw Error('INVALID_RECURRENCE');}
 }
-export function merge(a:Entity,b:Entity):Entity {validate(a);validate(b);if(a.id!==b.id||a.kind!==b.kind||a.createdAt!==b.createdAt)throw Error('IDENTITY_CONFLICT');const out=clone(a);for(const key of Object.keys(a.fields) as (keyof Fields)[])if(compare(b.fieldClocks[key],a.fieldClocks[key])>0||(compare(b.fieldClocks[key],a.fieldClocks[key])===0&&JSON.stringify(b.fields[key])>JSON.stringify(a.fields[key]))){Object.assign(out.fields,{[key]:b.fields[key]});out.fieldClocks[key]=clone(b.fieldClocks[key]);}if(compare(b.fieldClocks.lifecycle,a.fieldClocks.lifecycle)>0||(compare(b.fieldClocks.lifecycle,a.fieldClocks.lifecycle)===0&&b.lifecycle==='deleted')){out.lifecycle=b.lifecycle;out.fieldClocks.lifecycle=clone(b.fieldClocks.lifecycle);}out.updatedAt=a.updatedAt>b.updatedAt?a.updatedAt:b.updatedAt;validate(out);return out;}
+export function merge(a:Entity,b:Entity):Entity {validate(a);validate(b);if(a.id!==b.id||a.kind!==b.kind||a.createdAt!==b.createdAt)throw Error('IDENTITY_CONFLICT');const out=clone(a);for(const key of new Set([...Object.keys(a.fields),...Object.keys(b.fields)])){
+ const ac=a.fieldClocks[key],bc=b.fieldClocks[key];
+ const af=a.fields as unknown as Record<string,unknown>,bf=b.fields as unknown as Record<string,unknown>;
+ if(bc&&(!ac||compare(bc,ac)>0||(compare(bc,ac)===0&&JSON.stringify(bf[key])>JSON.stringify(af[key])))){
+  Object.assign(out.fields,{[key]:bf[key]});out.fieldClocks[key]=clone(bc);
+ }
+}
+// Derived unscheduled values keep the winning clocks; historical snapshots stay absent.
+if(out.kind==='Task'&&out.fields.scheduledStartAt==null){
+ for(const key of schedulingKeys)if(Object.hasOwn(out.fields,key))Object.assign(out.fields,{[key]:null});
+}
+if(compare(b.fieldClocks.lifecycle,a.fieldClocks.lifecycle)>0||(compare(b.fieldClocks.lifecycle,a.fieldClocks.lifecycle)===0&&b.lifecycle==='deleted')){out.lifecycle=b.lifecycle;out.fieldClocks.lifecycle=clone(b.fieldClocks.lifecycle);}out.updatedAt=a.updatedAt>b.updatedAt?a.updatedAt:b.updatedAt;validate(out);return out;}

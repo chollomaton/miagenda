@@ -1,6 +1,7 @@
+import {serialize,deserialize,migrate,diffFields} from '../src/models/serialization';
 import {describe,it,expect} from 'vitest';
 import {createEntity,updateEntity,merge,clone,validate,defaults,compare,nextClock,safeURL} from '../src/models/entities';
-import type {Entity,Kind,Fields} from '../src/models/entities';
+import type {Entity,Kind,Fields,Task,TaskScheduling} from '../src/models/entities';
 import {MemoryRepository,RepositoryError} from '../src/repositories/AgendaRepository';
 import {AgendaStore} from '../src/stores/AgendaStore';
 import {MemoryPersistence} from '../src/offline/Persistence';
@@ -97,4 +98,64 @@ describe('additional regression coverage',()=>{
  it('quarantine travels durably with cursor',async()=>{const s=await store(),auth=localAuth(),g=new MockCloudGateway();await auth.signIn();g.log.push({...encode(task()),recordType:'bad'});await new SyncEngine(s,new CloudKitRepository(g),auth).sync();const disk=await s.persistence.load();expect(disk.cursor).toBe('1');expect(disk.quarantine).toHaveLength(1)});
  it('CloudKit rejects reusing operation ID for another edit',async()=>{const r=new CloudKitRepository(new MockCloudGateway()),e=task();await r.save(e,'same');await expect(r.save(edit(e,{title:'other'},'b'),'same')).rejects.toThrow('OPERATION_REUSE')});
  it('older logout completion cannot erase newer login state',async()=>{let resolve!:()=>void;const auth=new AuthManager({signIn:async()=> 'A',signOut:()=>new Promise<void>(r=>resolve=r)});await auth.signIn();const logout=auth.signOut();await auth.signIn();resolve();await logout;expect(auth.state).toBe('signedIn')});
+});
+
+// TB1 fixtures use explicit clocks so concurrency does not depend on wall time.
+describe('Task scheduling core (TB1)',()=>{
+ const keys=['scheduledStartAt','scheduledDurationMinutes','scheduledTimezone'] as const;
+ const scheduled=()=>createEntity('Task',{scheduledStartAt:'2026-10-05T08:00:00.000Z',scheduledDurationMinutes:60,scheduledTimezone:'Europe/Madrid'},'a') as Task;
+ const bump=(e:Task,key:typeof keys[number],writer='b')=>{e.fieldClocks[key]=nextClock(writer,Object.values(e.fieldClocks),0)};
+ it('preserves historical validation serialization migration and decode',()=>{
+  const e=task(),snapshot=JSON.stringify(e);validate(e);
+  expect(serialize(e)).toBe(snapshot);expect(deserialize(snapshot)).toEqual(e);expect(migrate(e)).toEqual(e);expect(decode(encode(e))).toEqual(e);
+  for(const key of keys){expect(Object.hasOwn(e.fields,key)).toBe(false);expect(Object.hasOwn(e.fieldClocks,key)).toBe(false)}
+ });
+ it('validates scheduled and modern unscheduled Tasks',()=>{
+  const e=scheduled();expect(()=>validate(e)).not.toThrow();expect(deserialize(serialize(e))).toEqual(e);
+  for(const key of keys)Object.assign(e.fields,{[key]:null});expect(()=>validate(e)).not.toThrow();
+ });
+ for(const key of keys){
+  it('rejects partial fields '+key,()=>{const e=scheduled();delete e.fields[key];expect(()=>validate(e)).toThrow()});
+  it('rejects missing clock '+key,()=>{const e=scheduled();delete e.fieldClocks[key];expect(()=>validate(e)).toThrow()});
+ }
+ for(const duration of [0,-1,NaN,Infinity])it('rejects duration '+duration,()=>{const e=scheduled();e.fields.scheduledDurationMinutes=duration;expect(()=>validate(e)).toThrow()});
+ for(const zone of ['Moon/Sea','',null,'+01:00'])it('rejects timezone '+zone,()=>{const e=scheduled();e.fields.scheduledTimezone=zone;expect(()=>validate(e)).toThrow()});
+ it('rejects invalid/non UTC start and null companions',()=>{
+  for(const patch of [{scheduledStartAt:'2026-02-30T08:00:00.000Z'},{scheduledStartAt:'2026-10-05T08:00:00+02:00'},{scheduledDurationMinutes:null},{scheduledStartAt:null}]){
+   const e=scheduled();Object.assign(e.fields,patch);expect(()=>validate(e)).toThrow();
+  }
+ });
+ it('restricts fields to Task without changing defaults',()=>{
+  for(const key of keys)expect(Object.hasOwn(defaults(),key)).toBe(false);
+  const e=createEntity('QuickNote');Object.assign(e.fields,scheduled().fields);Object.assign(e.fieldClocks,scheduled().fieldClocks);expect(()=>validate(e)).toThrow();
+ });
+ it('combines independently moved start and resized duration',()=>{
+  const base=scheduled(),a=clone(base),b=clone(base);a.fields.scheduledStartAt='2026-10-05T09:00:00.000Z';b.fields.scheduledDurationMinutes=90;bump(a,'scheduledStartAt');bump(b,'scheduledDurationMinutes');
+  const m=merge(a,b) as Task;expect(m.fields).toMatchObject({scheduledStartAt:a.fields.scheduledStartAt,scheduledDurationMinutes:90,scheduledTimezone:'Europe/Madrid'});expect(m).toEqual(merge(b,a));
+ });
+ it('normalizes concurrent unschedule against newer resize without inventing clocks',()=>{
+  const base=scheduled(),a=clone(base),b=clone(base);for(const key of keys){Object.assign(a.fields,{[key]:null});bump(a,key)}
+  b.fields.scheduledDurationMinutes=90;b.fieldClocks.scheduledDurationMinutes=nextClock('c',Object.values(a.fieldClocks),0);
+  const m=merge(a,b) as Task;expect(m.fields).toMatchObject({scheduledStartAt:null,scheduledDurationMinutes:null,scheduledTimezone:null});validate(m);expect(m).toEqual(merge(b,a));expect(m.fieldClocks.scheduledDurationMinutes).toEqual(b.fieldClocks.scheduledDurationMinutes);expect(m.updatedAt).toBe(base.updatedAt);expect(merge(m,m)).toEqual(m);
+ });
+ it('rejects merged planned start with null companions instead of inventing defaults',()=>{
+  const base=scheduled(),a=clone(base),b=clone(base);for(const key of keys){Object.assign(a.fields,{[key]:null});bump(a,key)}
+  b.fields.scheduledStartAt='2026-10-05T09:00:00.000Z';b.fieldClocks.scheduledStartAt=nextClock('c',Object.values(a.fieldClocks),0);
+  expect(()=>merge(a,b)).toThrow('INVALID_SCHEDULING');expect(()=>merge(b,a)).toThrow('INVALID_SCHEDULING');
+ });
+ it('core updates can introduce optional clocks without throwing',()=>{
+  const e=task(),scheduledFields=scheduled().fields;
+  const updated=updateEntity(e,scheduledFields,'b');validate(updated);for(const key of keys)expect(updated.fieldClocks[key]).toBeDefined();
+ });
+ it('merges absent optional fields and clocks safely in both orders',()=>{
+  const historical=task(),modern=scheduled();modern.id=historical.id;modern.createdAt=historical.createdAt;
+  expect(merge(historical,modern)).toEqual(merge(modern,historical));expect((merge(historical,modern) as Task).fields.scheduledDurationMinutes).toBe(60);
+  for(const key of keys)Object.assign(modern.fields,{[key]:null});expect(merge(historical,modern)).toEqual(merge(modern,historical));expect(merge(historical,historical)).toEqual(historical);
+ });
+ it('scopes missing/null diff equivalence to unscheduled scheduling',()=>{
+  const e=task(),nulls:TaskScheduling={scheduledStartAt:null,scheduledDurationMinutes:null,scheduledTimezone:null};
+  expect(diffFields(e.fields,{...e.fields,...nulls})).toEqual({});expect(updateEntity(e,nulls,'b')).toEqual(e);
+  expect(diffFields(e.fields,{...e.fields,...nulls,title:'changed'})).toEqual({title:'changed'});
+  expect(diffFields(scheduled().fields,{...scheduled().fields,...nulls})).toEqual(nulls);
+ });
 });
