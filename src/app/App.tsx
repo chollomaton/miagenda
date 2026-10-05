@@ -27,7 +27,7 @@ import {installationIdentity} from '../offline/installation';
 import {IndexedDBPersistence,MemoryPersistence} from '../offline/Persistence';
 import {localAuth} from '../auth/AuthManager';
 import {select} from '../search/selectors';
-import {createCommandRegistry,matchingCommands} from '../commands/registry';
+import {createCommandRegistry,matchingCommands,templateCommands} from '../commands/registry';
 import type {AgendaEntity as Entity,Fields} from '../models/entities';
 import {defaults,safeURL} from '../models/entities';
 import {addDays,addMonths,coversDate,dateInZone,occurrences,scheduledTaskBlock,timelineCoversDate,wallTime,wallToUTC} from '../utils/calendar';
@@ -105,6 +105,7 @@ export function App({providedStore,cloudControls,onCloudLogout}:{providedStore?:
  });
  const paletteItems=[
   ...matchingCommands(commands,searchQuery).map(command=>({id:command.id,label:command.label,execute:command.execute})),
+  ...templateCommands(store.entities,searchQuery,applyTemplate),
   ...(searchQuery.trim()?select(store.entities,{query:searchQuery}).filter(e=>e.kind!=='Preferences').slice(0,50):[]).map(e=>({id:e.id,label:names[e.kind]+' · '+(e.fields.title||e.fields.text.slice(0,80)),execute:()=>open(e)})),
  ];
  const selectedIndex=Math.min(commandIndex,Math.max(0,paletteItems.length-1));

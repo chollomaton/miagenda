@@ -1,3 +1,5 @@
+import {validate} from '../models/entities';
+import type {Entity,Template} from '../models/entities';
 import {normalize} from '../search/selectors';
 
 export type CommandId='task.new'|'reminder.new'|'event.new'|'note.new'|'calendar.today'|'quickCapture.open';
@@ -15,4 +17,15 @@ export function createCommandRegistry(callbacks:Record<CommandId,()=>void>):Comm
 }
 export function matchingCommands(commands:Command[],query:string):Command[]{
  return commands.filter(command=>[command.label,...(command.keywords??[])].some(value=>normalize(value).includes(normalize(query))));
+}
+
+// The supplied entities belong to the current store/account scope; never cache these actions.
+export function templateCommands(entities:Entity[],query:string,onApply:(template:Template)=>void){
+ const term=normalize(query);
+ if(!term)return [];
+ return entities.flatMap(template=>{
+  if(template.kind!=='Template'||template.lifecycle!=='active'||!normalize(template.fields.name).includes(term))return [];
+  try{validate(template)}catch{return []}
+  return [{id:'template.apply:'+template.id,label:'Crear desde plantilla: '+template.fields.name,execute:()=>onApply(template)}];
+ });
 }

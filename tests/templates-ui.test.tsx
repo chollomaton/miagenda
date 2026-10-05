@@ -80,8 +80,8 @@ describe('Templates Settings UI',()=>{
  it.each([390,1280])('responsive smoke at %s keeps list/detail and back controls usable',async width=>{
   Object.defineProperty(window,'innerWidth',{value:width,configurable:true});await fixture({targetKind:'Task',values:{}});edit();expect(document.querySelector('.templates-layout')).toHaveClass('show-detail');fireEvent.click(screen.getByRole('button',{name:'← Plantillas'}));expect(document.querySelector('.templates-layout')).not.toHaveClass('show-detail');expect(screen.getByRole('button',{name:'Rutina Tarea'})).toBeInTheDocument();
  });
- it('never returns a Template in global search or commands',async()=>{
+ it('returns Templates only as dynamic commands, never as global search results',async()=>{
   const {store}=await fixture({targetKind:'Task',values:{title:'Rutina'}});expect(select(store.entities,{query:'Rutina'})).toEqual([]);
-  fireEvent.click(screen.getByRole('button',{name:'Buscar en toda Mi Agenda'}));fireEvent.change(screen.getByRole('combobox'),{target:{value:'Rutina'}});expect(screen.queryAllByRole('option')).toHaveLength(0);
+  fireEvent.click(screen.getByRole('button',{name:'Buscar en toda Mi Agenda'}));fireEvent.change(screen.getByRole('combobox'),{target:{value:'Rutina'}});expect(screen.getAllByRole('option').map(node=>node.textContent)).toEqual(['Crear desde plantilla: Rutina']);
  });
 });
