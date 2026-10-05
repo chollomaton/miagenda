@@ -1,6 +1,6 @@
 import {normalizeFields} from '../models/serialization';
 import {createEntity,updateEntity} from '../models/entities';
-import type {Entity,Fields,Kind} from '../models/entities';
+import type {Entity,Fields,Kind,Task,TaskScheduling} from '../models/entities';
 import type {LocalAgendaRepository} from '../repositories/LocalAgendaRepository';
 import {addDays,dateInZone,wallToUTC} from '../utils/calendar';
 export class AgendaService {
@@ -10,6 +10,25 @@ export class AgendaService {
  async bulk(ids:string[],patch:Partial<Fields>,lifecycle?:Entity['lifecycle']){await this.repository.commit(()=>this.repository.entities.filter(e=>ids.includes(e.id)).map(e=>updateEntity(e,patch,this.repository.writerID,lifecycle)))}
  async complete(id:string,completed:boolean){await this.patch(id,{completed,completedAt:completed?new Date().toISOString():null})}
  async duplicate(id:string){await this.repository.flush();const original=this.repository.entities.find(e=>e.id===id);if(!original)throw Error('NOT_FOUND');const copy=createEntity(original.kind,{...original.fields,title:original.fields.title+' (copia)'},this.repository.writerID);const children=original.kind==='Task'?this.repository.entities.filter(e=>e.kind==='Subtask'&&e.fields.parentTaskId===id&&e.lifecycle==='active').map(e=>createEntity('Subtask',{...e.fields,parentTaskId:copy.id},this.repository.writerID)):[];await this.repository.commit([copy,...children]);return copy}
+
+ private schedulingMutation(id:string,patch:(task:Task)=>TaskScheduling){return this.repository.commit(()=>{
+  const task=this.repository.entities.find(e=>e.id===id);
+  if(!task)throw Error('NOT_FOUND');
+  if(task.kind!=='Task')throw Error('TASK_REQUIRED');
+  if(task.lifecycle!=='active')throw Error('TASK_DELETED');
+  if(task.fields.recurrence!==null)throw Error('RECURRING_TASK_SCHEDULING_UNSUPPORTED');
+  return [updateEntity(task,patch(task),this.repository.writerID)];
+ })}
+ scheduleTask(id:string,scheduledStartAt:string,scheduledDurationMinutes:number,scheduledTimezone:string){return this.schedulingMutation(id,()=>({scheduledStartAt,scheduledDurationMinutes,scheduledTimezone}))}
+ unscheduleTask(id:string){return this.schedulingMutation(id,()=>({scheduledStartAt:null,scheduledDurationMinutes:null,scheduledTimezone:null}))}
+ moveScheduledTask(id:string,scheduledStartAt:string,scheduledTimezone?:string){return this.schedulingMutation(id,task=>{
+  if(task.fields.scheduledStartAt==null)throw Error('TASK_NOT_SCHEDULED');
+  return {scheduledStartAt,...(scheduledTimezone===undefined?{}:{scheduledTimezone})};
+ })}
+ resizeScheduledTask(id:string,scheduledDurationMinutes:number){return this.schedulingMutation(id,task=>{
+  if(task.fields.scheduledStartAt==null)throw Error('TASK_NOT_SCHEDULED');
+  return {scheduledDurationMinutes};
+ })}
 
  delete(id:string){return this.patch(id,{},'deleted')}
  restore(id:string){return this.patch(id,{},'active')}
