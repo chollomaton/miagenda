@@ -35,3 +35,14 @@
 .label-calendar-indicator{width:3px;height:28px;border-radius:2px;background:var(--preview-color);flex-shrink:0}
 .label-mini-card{padding:7px;border-radius:7px;background:color-mix(in srgb,var(--preview-color) 10%,transparent);color:var(--text-primary)}
 @media(max-width:850px){.settings-screen .settings-layout,.labels-screen .labels-layout{grid-template-columns:1fr}.settings-screen .settings{padding:18px}.settings-screen .settings-nav{display:flex;flex-wrap:wrap}.labels-detail{padding:18px 0}}
+
+.templates-layout{display:grid;grid-template-columns:minmax(170px,230px) minmax(0,1fr);align-items:start;margin-top:18px}
+.template-row{display:flex;flex-direction:column;align-items:flex-start;width:100%;min-height:44px;text-align:left;overflow-wrap:anywhere;gap:4px}
+.template-row small{color:var(--text-secondary)}
+.template-editor header,.template-editor footer{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+.template-editor :is(button,input,select){min-height:44px}
+.template-editor .check{min-height:44px}
+@media(max-width:850px){.templates-layout{grid-template-columns:minmax(0,1fr)}.templates-layout:not(.show-detail)>.labels-detail,.templates-layout.show-detail>.labels-sidebar{display:none}.templates-layout .labels-detail{padding:0}.template-editor footer{justify-content:flex-start}}
+.settings-screen .template-editor .editor-content{display:grid;gap:16px;padding-top:16px}
+.settings-screen .template-editor label{grid-template-columns:minmax(0,1fr);gap:7px}
+.settings-screen .template-editor .check{display:flex}
