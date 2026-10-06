@@ -1,6 +1,10 @@
 # Mi Agenda
 
-Aplicación web local, esquema V1. Node 24.
+Mi Agenda 1.0.0 — aplicación web/PWA local-first, esquema V1. Node 24.
+
+Agenda local con tareas, recordatorios, eventos, notas, etiquetas, plantillas,
+CmdK, captura rápida, Time Blocking, Radar y copias ZIP/JSON.
+Firebase es opcional; los datos locales no se migran automáticamente a la cuenta Google.
 
 ```sh
 npm ci
@@ -9,8 +13,14 @@ npm run check
 ```
 
 Desarrollo: `/miagenda/`. IndexedDB: `miagenda`, datos separados por usuario.
-CloudKit y autenticación reales pendientes de configuración externa; adapters y mocks incluidos.
-CI y Pages preparados localmente. Pages solo por ejecución manual futura.
+Firebase se configura mediante variables de build; no incluye credenciales de usuario.
+CloudKit real sigue pendiente de configuración externa.
+CI valida cada push; Pages se despliega con el workflow manual.
+
+La certificación Firebase y los runs anteriores comunicados por el usuario
+corresponden al SHA `a48df5b17f1bdabe769737b5ad7bdaa5ea1f2d56`.
+El cierre de 1.0.0 exige una validación nueva y smoke sobre el SHA desplegado;
+consultar `VALIDATION_REPORT.md` y `RELEASE_NOTES.md`.
 
 ## Configurar Firebase para Pages
 

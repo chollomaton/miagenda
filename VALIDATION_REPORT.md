@@ -112,3 +112,27 @@ reconexión y cambio del worker. Registrar resultado y evidencia por prueba;
 instalación real y safe areas requieren además el dispositivo compatible.
 La certificación Firebase real queda para después de cerrar estas fases y disponer
 de proyecto/credenciales reales.
+
+## Preparación release 1.0.0 — 2026-10-06
+
+Gate inicial PASS: ruta canónica `/Users/carlos/Documents/Codex/miagenda`, rama `main`, HEAD y main remoto `a48df5b17f1bdabe769737b5ad7bdaa5ea1f2d56`, árbol limpio y sin tags remotos.
+Los informes anteriores son históricos y no equivalen a un smoke sobre el nuevo SHA.
+La certificación real Firebase y CI/Pages previos (37505823403 / 37505851186) son datos proporcionados por el usuario, no pruebas nuevas de esta sesión.
+No hay blockers P0 abiertos documentados en los informes inspeccionados; las limitaciones de certificación manual siguen sujetas al gate de release.
+Cambios limitados a versión de paquete/lock npm, metadata visible y de backup, README y notas; esquema V1 y comportamiento conservados. pnpm-lock.yaml no almacena la versión del paquete raíz y no necesita cambios.
+### Validación nueva de esta sesión
+
+- Runtime Node 24.19.0, npm 11.6.2; `npm ci` PASS (315 paquetes instalados). La salida de instalación anunció 5 vulnerabilidades altas.
+- `npm run check` PASS: tipos, lint, **453 tests / 26 archivos**, security **69 archivos / 0 hallazgos**, build y generación del shell. Duración Vitest: 11.99 s.
+- `git diff --check` PASS.
+- Inspección independiente PASS: manifest distribuido idéntico al público, cuatro shortcuts con URLs esperadas, assets bajo `/miagenda/`, iconos presentes y worker generado con index/manifest. Esto no certifica ejecución offline.
+- Búsqueda adicional de claves privadas, tokens GitHub/OpenAI, service accounts y claves API Google en archivos versionados y dist: 0 hallazgos. `.env.example` sólo contiene variables vacías. No se encontraron archivos privados/temporales entre los archivos versionados.
+- Bundle CloudApp 663.77 kB (195.98 kB gzip): warning >500 kB, no error.
+- `npm audit --json` adicional devolvió 16 hallazgos altos, 0 críticos, asociados a dos advisories transitivas de grpc-js y una de source-map-js, además de sus cadenas de dependencias. Esta respuesta difiere del conteo anunciado durante npm ci; se conserva el resultado de ambas operaciones. Alcance/explotabilidad pendientes de evaluación; no se ejecutó audit fix ni se cambiaron dependencias. El escáner del proyecto no sustituye esta revisión.
+
+### Gate de publicación y smoke
+
+**RELEASE BLOCKED.** No hay controles Computer Use/browser expuestos. Un intento con Playwright y Chrome real, perfil temporal independiente y headless, abortó al arrancar: `browserType.launch: Target page, context or browser has been closed`. No llegó a cargar producción. No se modificó el perfil habitual ni se ejecutaron flujos Firebase reales.
+Carga limpia, agenda local, Task CRUD/complete/reopen/trash/restore, CmdK, Quick Capture, Templates, Time Blocking, Radar, exportación ZIP, Firebase login/sync/logout/relogin/persistencia, responsive desktop/393 y PWA/offline: **BLOCKED en el smoke nuevo**. Los tests automatizados PASS no reemplazan esta certificación.
+El conector GitHub permite crear commit/actualizar main y consultar resultados. No expone dispatch del workflow manual Pages; git no tiene credencial HTTPS local disponible. No se deben reejecutar runs antiguos para certificar el nuevo SHA.
+No se crean ZIP/SHA de distribución, tag ni GitHub Release mientras A–E no sean PASS. Se conserva FIREBASE TEST y no se modifican billing, schema ni migración.
