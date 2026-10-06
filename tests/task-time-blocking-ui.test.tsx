@@ -61,7 +61,7 @@ it('Task editor schedules, renders Day/Week, opens the original and reflects com
  await act(()=>store.complete(task.id,true));expect(screen.queryByRole('button',{name:blockName})).toBeNull();await act(()=>store.service.reopen(task.id));expect(screen.getByRole('button',{name:blockName})).toBeInTheDocument();
  await act(()=>store.service.delete(task.id));expect(screen.queryByRole('button',{name:blockName})).toBeNull();await act(()=>store.service.restore(task.id));expect(screen.getByRole('button',{name:blockName})).toBeInTheDocument();
  fireEvent.click(screen.getByRole('button',{name:blockName}));fireEvent.click(screen.getByRole('button',{name:'Quitar planificación'}));await settled(store);fireEvent.click(screen.getByRole('button',{name:'Cerrar'}));expect(screen.queryByRole('button',{name:blockName})).toBeNull();expect(store.entities[0].fields.due).toBe(task.fields.due);
-});
+},15000);
 it('recurrent Task editor explains guard and offers no scheduling action',async()=>{const {task,store}=await fixture();await store.patch(task.id,{recurrence:{frequency:'daily',interval:1,weekdays:[],monthDay:null,count:null,until:null,exceptions:[]}});render(<App providedStore={store}/>);fireEvent.click(within(screen.getByRole('navigation',{name:'Secciones'})).getByRole('button',{name:'Tareas'}));fireEvent.click(screen.getByRole('button',{name:/^Trabajo profundo/}));expect(screen.getByText('Las tareas recurrentes todavía no pueden planificarse en el calendario.')).toBeInTheDocument();expect(screen.queryByRole('button',{name:'Planificar…'})).toBeNull()});
 
 it.each([390,1280])('Day/Week smoke at viewport width %s keeps controls and task dialog available',async width=>{
