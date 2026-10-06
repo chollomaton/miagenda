@@ -12,6 +12,18 @@ Desarrollo: `/miagenda/`. IndexedDB: `miagenda`, datos separados por usuario.
 CloudKit y autenticación reales pendientes de configuración externa; adapters y mocks incluidos.
 CI y Pages preparados localmente. Pages solo por ejecución manual futura.
 
+## Configurar Firebase para Pages
+
+1. Crear el proyecto Firebase y registrar una aplicación web.
+2. En Authentication, habilitar el proveedor Google y añadir `chollomaton.github.io` a Authorized domains.
+3. Crear Cloud Firestore y desplegar las reglas de `firestore.rules` en ese proyecto antes de usar la sincronización.
+4. En GitHub → Settings → Secrets and variables → Actions → Variables, crear las cuatro Repository Variables: `FIREBASE_API_KEY`, `FIREBASE_AUTH_DOMAIN`, `FIREBASE_PROJECT_ID` y `FIREBASE_APP_ID`, con la configuración de la aplicación web. Usar el authDomain Firebase (`<proyecto>.firebaseapp.com`).
+5. Ejecutar manualmente el workflow `Pages (manual)` y certificar en la web publicada el login Google, logout, aislamiento por usuario y sincronización Firestore.
+
+El workflow fija `VITE_CLOUD_BACKEND=firebase` e inyecta esas variables como `VITE_FIREBASE_*` durante `npm run check` (incluido el build). Si faltan o son inválidas, el build compila y Firebase permanece `unavailable`.
+El login usa popup sin scopes adicionales; cerrar o bloquear la ventana permite reintentar. La CSP permite conexiones Google APIs/Firebase y los frames de autenticación; el SDK sigue empaquetado y `script-src` permanece limitado a `'self'`.
+El flujo canónico es npm (`npm ci`); `pnpm-lock.yaml` coexiste y se conserva, pero los workflows usan `package-lock.json`.
+
 ## Backups locales
 
 En Ajustes → Datos y recuperación se puede exportar ZIP o JSON e importar ambos.

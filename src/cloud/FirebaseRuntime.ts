@@ -1,5 +1,5 @@
 import {initializeApp} from 'firebase/app';
-import {browserLocalPersistence,getAuth,GoogleAuthProvider,onAuthStateChanged,setPersistence,signInWithRedirect,signOut} from 'firebase/auth';
+import {browserLocalPersistence,getAuth,GoogleAuthProvider,onAuthStateChanged,setPersistence,signInWithPopup,signOut} from 'firebase/auth';
 import {initializeFirestore,memoryLocalCache} from 'firebase/firestore';
 import {AuthManager} from '../auth/AuthManager';
 import {AgendaSession} from '../auth/AgendaSession';
@@ -51,7 +51,18 @@ export class FirebaseRuntime {
    },()=>{this.invalidate();this.state='unavailable';this.emit()});
   }catch{this.state='unavailable';this.emit()}
  }
- async login(){if(!this.sdkAuth)return;try{await signInWithRedirect(this.sdkAuth,new GoogleAuthProvider())}catch{this.state='unavailable';this.emit()}}
+ async login(){
+  if(!this.sdkAuth)return;
+  const generation=this.generation;
+  try{await signInWithPopup(this.sdkAuth,new GoogleAuthProvider())}catch(error){
+   if(generation!==this.generation)return;
+   const code=typeof error==='object'&&error!==null&&'code' in error?error.code:null;
+   const fatal=['auth/invalid-api-key','auth/app-not-authorized','auth/unauthorized-domain','auth/operation-not-allowed','auth/invalid-auth-event'];
+   if(fatal.includes(String(code))){this.invalidate();this.state='unavailable'}
+   else if(!this.session)this.state='signedOut';
+   this.emit();
+  }
+ }
  private invalidate(){++this.generation;this.session?.auth.expire();this.session=null}
  async logout(){this.invalidate();this.state='signedOut';this.emit();if(this.sdkAuth)await signOut(this.sdkAuth)}
  dispose(){this.stop?.();this.stop=null;this.invalidate()}
