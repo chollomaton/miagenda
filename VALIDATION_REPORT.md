@@ -136,3 +136,154 @@ Cambios limitados a versión de paquete/lock npm, metadata visible y de backup, 
 Carga limpia, agenda local, Task CRUD/complete/reopen/trash/restore, CmdK, Quick Capture, Templates, Time Blocking, Radar, exportación ZIP, Firebase login/sync/logout/relogin/persistencia, responsive desktop/393 y PWA/offline: **BLOCKED en el smoke nuevo**. Los tests automatizados PASS no reemplazan esta certificación.
 El conector GitHub permite crear commit/actualizar main y consultar resultados. No expone dispatch del workflow manual Pages; git no tiene credencial HTTPS local disponible. No se deben reejecutar runs antiguos para certificar el nuevo SHA.
 No se crean ZIP/SHA de distribución, tag ni GitHub Release mientras A–E no sean PASS. Se conserva FIREBASE TEST y no se modifican billing, schema ni migración.
+
+## Gates seguridad y producción — 2026-10-06, sesión nueva
+
+Gate 0 PASS: pwd canónico, rama main, HEAD inicial
+`eaa32ca4be8ae490fe628e5ab0996e6bc474e14c`, árbol limpio y origin
+`https://github.com/chollomaton/miagenda.git`. Main remoto vuelve a comprobarse
+en ese SHA al cierre. HEAD final sin cambios; no commit ni push nuevos.
+
+Seguridad A PASS para los 16 HIGH en runtime browser: tabla completa,
+advisories, versiones instaladas, fixes raíz y límites en SECURITY.md.
+Audit reproducido con npm 11.6.2: 16 HIGH/0 críticos; sin cambios de lockfile.
+Build local de diagnóstico con sourcemaps PASS; grpc/source-map-js ausentes
+de las 67 fuentes JS. No fixes aplicados. No se reejecuta la suite local por
+cambio de código: no hubo cambios de código. Validación del mismo SHA en
+Pages nueva: npm ci y npm run check PASS, 453 tests/26 archivos.
+
+Deploy B PASS: iniciado por UI GitHub autenticada, Pages (manual) sobre main,
+run [37512787091](https://github.com/chollomaton/miagenda/actions/runs/37512787091),
+Success, 50 s, job 112437971801. SHA completo eaa32ca4be8ae490fe628e5ab0996e6bc474e14c.
+Artefacto Pages 11435985076, digest
+`e089e4c62bd520b8c1dee2cb6cb07c6e2a63cd9c1282e1933996605b35feaf06`.
+Producción por HTTP: index-ocoSZ7Ez.js y CloudApp-C0Q_6BuD.js; UI 1.0.0.
+Workflow sin cambios. gh no está instalado; no se buscaron ni expusieron tokens.
+
+Smoke C **PARTIAL**, mediante navegador integrado local y Chrome local
+conectado por extensión; no se lanzó Chrome cloud ni standalone Playwright.
+
+| Prueba sobre producción nueva | Resultado observado |
+| --- | --- |
+| Carga limpia y agenda local | PASS; UI 1.0.0 con bypass temporal de SW/caché para excluir shell antiguo |
+| Task crear/editar/completar/reabrir/eliminar/restaurar | PASS con tarea sintética Smoke 1.0.0 2026-10-06; notas persistidas y restauración a pendientes |
+| CmdK + Quick Capture | PASS abrir CmdK, seleccionar captura, parsear mañana 2026-10-07 y llevar título/fecha al editor; cancelado sin crear |
+| Templates básico | PASS crear/guardar Plantilla smoke 1.0.0 y usarla, editor precargado; cancelado sin crear tarea |
+| Time Blocking básico | PASS planificar 2026-10-06 09:00, 60 min y comprobar persistencia al reabrir editor |
+| Radar básico | PARTIAL; estado vacío mostrado, falta interacción con un vencimiento/solape real |
+| Backup ZIP export | PARTIAL; botón accionado, sin alert/error observado, pero waitForEvent(download) agotó 20 s; archivo no verificado |
+| Firebase | PARTIAL; Chrome muestra Cuenta Google, sincronización activada, 0 pendientes, FIREBASE TEST existente conservado. No se certifican sync/logout/relogin nuevos |
+| Responsive desktop/393 | PASS básico: 1280 px, client/scroll 1265; 393 px, client/scroll 378. Editor móvil dentro del viewport, sin overflow horizontal; capturas inspeccionadas |
+| Service worker/offline | PARTIAL; shell de inicio carga offline tras visita y cierre/reapertura para activar worker nuevo. Agenda completa después de recarga offline no certificada: apertura local no produjo estado verificable |
+
+Las primeras cargas servían un shell antiguo (index-DDj3NKk4.js y metadata
+0.3.0), con estados Firebase distintos. No se contaron como smoke nuevo.
+No se purgaron caches ni datos privados. Bypass de SW/caché y red offline
+fueron temporales y se restauraron; viewport también restaurado. Las
+observaciones incompletas de descarga/offline no demuestran por sí solas un
+bug de aplicación. Sin nuevas features, schema changes, billing ni migración.
+
+Bloqueo explícito: revisión automática de aprobación rechazó el click
+«Sincronizar ahora», al considerar que transmitiría datos de agenda sensibles
+a la cuenta Firebase sin autorización específica del payload. No se eludió
+el rechazo por otro medio. Logout/relogin del ciclo solicitado no realizados.
+
+Mínimos pendientes en https://chollomaton.github.io/miagenda/ con UI 1.0.0:
+
+1. Autorizar expresamente la sincronización de la agenda de la cuenta Google
+   ya conectada con su mismo Firebase, sin migrar la agenda local; ejecutar
+   sync, logout, relogin, reload y confirmar persistencia de FIREBASE TEST.
+2. En agenda de pruebas con datos sintéticos: exportar ZIP, confirmar guardado
+   y abrirlo con lector ZIP independiente; verificar backup.json/CRC.
+3. Crear un vencimiento o solape sintético; desplegar Radar y abrir el item.
+4. Cerrar pestañas de la app para activar SW nuevo, visitar 1.0.0, desconectar,
+   recargar, abrir agenda local y comprobar la tarea persistida; reconectar.
+
+Release D **BLOCKED por C incompleto**: no MiAgenda-1.0.0.zip, no SHA256 de
+distribución, no tag v1.0.0, no GitHub Release. Tag local/remoto ausente.
+Working tree final dirty únicamente por SECURITY.md y VALIDATION_REPORT.md.
+Evidencia diagnóstica local ignorada en node_modules/.release-evidence/;
+no incluye export de datos privados ni credenciales.
+
+### Continuación con autorización — 2026-10-06
+
+El usuario autoriza explícitamente sincronizar la agenda de la cuenta Google
+con su mismo Firebase, sin migrar la agenda local. La acción «Sincronizar
+ahora» se ejecuta sin nuevo rechazo; sigue mostrando 0 pendientes.
+Logout PASS: la app vuelve a «Google: sesión cerrada». Relogin abre el
+selector Google con varias cuentas; tras la respuesta «hecho» el popup
+desaparece pero la app sigue signedOut, también después de reload.
+Se reabre el login y se solicita identificar la misma cuenta; no se elige
+una cuenta a ciegas ni se cambia ninguna credencial.
+
+Radar básico ahora PASS: botón Hoy en el editor fija 2026-10-06 09:00,
+se guarda, Radar muestra 1 vencidos/0 conflictos, se despliega y el resultado
+abre el editor de la tarea sintética correcta.
+
+Offline básico ahora PASS: recarga con red offline por CDP, shell de inicio
+cargado, apertura local por UI, DOM confirma Mi Agenda Web 1.0.0 y la tarea
+persistida con fecha/planning. Captura guardada y conexión restaurada.
+
+ZIP export sigue PARTIAL: nuevos intentos por la API documentada de descarga
+en navegador integrado y Chrome local agotan 10 s sin entregar ruta de archivo.
+En Chrome se usa agenda local inicialmente vacía, con única tarea sintética
+ZIP smoke 1.0.0; no se exporta la agenda Firebase ni se migra la local.
+No se puede certificar archivo/CRC. La ausencia del evento en la herramienta
+no demuestra por sí sola fallo de la app.
+
+Pendientes actualizados: relogin con la misma cuenta y persistencia Firebase;
+archivo ZIP exportado verificable. Seguridad/deploy permanecen PASS,
+smoke PARTIAL y release bloqueada. HEAD intacto; sólo los dos informes dirty.
+
+### Verificación de ZIP descargado — 2026-10-06
+
+Gate 0 de esta continuación PASS: main, HEAD
+`eaa32ca4be8ae490fe628e5ab0996e6bc474e14c`, cambios iniciales únicamente
+en SECURITY.md y VALIDATION_REPORT.md; se conservan íntegramente.
+
+Backup ZIP **PASS**: archivo real
+`/Users/carlos/Downloads/mi-agenda-backup-2026-10-06 (2).zip`,
+1014 bytes, abierto con lector independiente Python zipfile. Contiene
+exactamente un backup.json, sin cifrado; testzip() confirma CRC íntegro.
+JSON válido, MiAgendaBackupV2, formatVersion 2, schemaVersion 1,
+applicationVersion 1.0.0; entityCount 1 coincide con los grupos.
+Contiene la tarea sintética ZIP smoke 1.0.0 en fields.title. Checksum
+interno SHA-256 coincide al serializar los grupos en el orden definido
+en src/backup/backup.ts (tasks, subtasks, reminders, events, quickNotes,
+labels, preferences, templates), sin espacios y en UTF-8. Inspección
+recursiva sin claves outbox/cursor/cursors/quarantine/sessionToken/
+recordChangeTag/accessToken/refreshToken/credentials/tokens.
+SHA-256 del ZIP de backup:
+`dd317249adc03b2093138fc650a1a369611528cf36c1225fe8ba939a99ecdb46`.
+El backup permanece en Descargas; no se añade al repositorio ni a release.
+
+Relogin **BLOCKED**: Chrome conserva el selector con varias cuentas;
+la app muestra Google: sesión cerrada. No hay evidencia suficiente para
+identificar la misma cuenta previa. Se solicita una única intervención:
+seleccionar esa cuenta y responder hecho. FIREBASE TEST y sync posteriores
+a relogin aún no verificados. Smoke final BLOCKED por ese único gate;
+no commit de certificación, tag ni release mientras quede pendiente.
+
+## Certificación final 1.0.0 — 2026-10-06
+
+La confirmación manual nueva del usuario cierra el último gate pendiente:
+relogin Firebase **PASS**. La captura descrita por el usuario muestra
+`Cuenta Google · 0 cambios pendientes` y
+`Sincronización con Firebase activada.` Después de relogin, el usuario
+entró en Tareas y confirmó que `FIREBASE TEST` reaparece: **PASS**.
+Esta evidencia se registra como confirmación manual del usuario; no como
+una nueva prueba de navegador ejecutada por el agente.
+
+Backup ZIP **PASS**, según la verificación real documentada arriba de
+`/Users/carlos/Downloads/mi-agenda-backup-2026-10-06 (2).zip`.
+Seguridad, Pages run 37512787091, Radar y offline conservan sus PASS
+previamente documentados. **Smoke final PASS** en el alcance de los gates
+registrados para el SHA funcional `eaa32ca4be8ae490fe628e5ab0996e6bc474e14c`.
+Los estados PARTIAL/BLOCKED anteriores son históricos y quedan resueltos
+por las continuaciones y esta confirmación. Se mantienen las limitaciones
+conocidas de RELEASE_NOTES.md y el alcance de SECURITY.md.
+
+Cierre autorizado: commit exclusivo de SECURITY.md y VALIDATION_REPORT.md;
+sin cambios funcionales, schema, Firebase, billing ni datos. El backup de
+usuario se excluye de la distribución. Publicación de main, CI, ZIP/SHA256,
+tag anotado y GitHub Release se verifican después del commit.
