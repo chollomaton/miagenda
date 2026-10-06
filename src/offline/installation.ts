@@ -1,0 +1,2 @@
+/** Only opaque, non-personal installation metadata is stored outside IndexedDB. */
+export function installationIdentity(storage?:Storage){try{storage=storage??localStorage;const key='miagenda-installation-v1';let installationID=storage.getItem(key);if(!installationID){installationID=crypto.randomUUID();storage.setItem(key,installationID)}return {installationID,writerID:crypto.randomUUID()}}catch{return {installationID:crypto.randomUUID(),writerID:crypto.randomUUID()}}}

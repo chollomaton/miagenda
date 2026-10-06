@@ -1,0 +1,48 @@
+/* Scoped parity with the 7.2.0 Settings and Labels surfaces. */
+.settings-screen .settings-layout{grid-template-columns:225px minmax(0,1fr);gap:0}
+.settings-screen .settings-nav{padding:16px;border:0;border-radius:0;background:color-mix(in srgb,var(--surface-sidebar) 50%,transparent)}
+.settings-screen .settings-nav button{padding:9px 12px;font-size:14px;gap:6px;min-height:0}
+.settings-screen .settings-nav button[aria-current=page]{background:color-mix(in srgb,var(--accent) 9%,transparent)}
+.settings-screen .settings-nav .icon{width:16px;height:16px;stroke-width:2;flex:0 0 22px}
+.settings-screen .settings{padding:30px 34px;max-width:1050px;width:100%}
+.settings-screen .settings .card{padding:22px;border-radius:var(--radius-section);background:color-mix(in srgb,var(--surface-card) 92%,transparent);border:1px solid color-mix(in srgb,var(--text-secondary) 5.5%,transparent);display:flex;flex-direction:column;gap:17px}
+.settings-screen .settings .card[hidden]{display:none}
+.settings-screen .settings :is(h3,h4,p){margin:0}
+.settings-screen .settings label{padding:0;border:0;margin:0}
+.labels-screen .labels-layout{display:grid;grid-template-columns:275px minmax(0,1fr);align-items:start}
+.labels-sidebar{padding:16px;background:color-mix(in srgb,var(--surface-sidebar) 50%,transparent);min-width:0}
+.labels-sidebar .list-search{padding:8px 10px;border-radius:9px;min-width:0;width:100%}
+.labels-sidebar .list-search input{padding:0;min-height:0;width:100%}
+.labels-sidebar .label-tree>li{padding:9px 0;border:0}
+.labels-sidebar .label-tree .toolbar{display:grid;grid-template-columns:28px minmax(0,1fr);gap:4px 8px}
+.labels-sidebar .label-tree button{padding:0;min-height:28px;overflow-wrap:anywhere}
+.labels-sidebar .label-tree .toolbar>button:last-child{grid-column:2;margin:0;background:transparent;border:0}
+.labels-sidebar .label-glyph{width:28px;height:28px;border-radius:8px}
+.labels-sidebar .label-glyph .icon{width:12px;height:12px;stroke-width:2}
+.labels-detail{min-width:0;padding:18px}
+.label-inline .editor{width:100%;max-width:none;max-height:none;box-shadow:none;padding:18px;background:color-mix(in srgb,var(--surface-card) 96%,transparent);border:1px solid var(--border-subtle);border-radius:var(--radius-card)}
+.label-editor-section{padding:18px;border:1px solid var(--border-subtle);border-radius:var(--radius-section);margin:16px 0;background:color-mix(in srgb,var(--surface-card) 92%,transparent)}
+.label-colors{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.label-color{position:relative;display:grid;place-items:center;width:36px;height:36px;min-height:36px;padding:0;border:0;background:transparent}
+.label-color span{width:26px;height:26px;border-radius:50%}
+.label-color[aria-pressed=true]{background:transparent}
+.label-color[aria-pressed=true]:after{content:'';position:absolute;width:34px;height:34px;border:2px solid var(--preview-color);border-radius:50%;box-sizing:border-box}
+.label-appearance .filter-pill{padding:6px 9px;font-size:var(--font-caption);font-weight:600;min-height:0;background:color-mix(in srgb,var(--text-secondary) 5%,transparent)}
+.label-appearance .filter-pill[aria-pressed=true]{background:color-mix(in srgb,var(--preview-color) 13%,transparent);color:var(--text-primary)}
+.label-preview{display:flex;align-items:center;gap:10px;padding:11px;border-radius:10px;background:color-mix(in srgb,var(--surface-window) 80%,transparent);margin-top:14px;overflow-wrap:anywhere}
+.label-preview>div{min-width:0}.label-preview-tag,.label-mini-card{display:flex;align-items:center;gap:5px;margin-top:7px;color:var(--preview-color)}
+.label-preview-tag .icon,.label-mini-card .icon{width:12px;height:12px}
+.label-calendar-indicator{width:3px;height:28px;border-radius:2px;background:var(--preview-color);flex-shrink:0}
+.label-mini-card{padding:7px;border-radius:7px;background:color-mix(in srgb,var(--preview-color) 10%,transparent);color:var(--text-primary)}
+@media(max-width:850px){.settings-screen .settings-layout,.labels-screen .labels-layout{grid-template-columns:1fr}.settings-screen .settings{padding:18px}.settings-screen .settings-nav{display:flex;flex-wrap:wrap}.labels-detail{padding:18px 0}}
+
+.templates-layout{display:grid;grid-template-columns:minmax(170px,230px) minmax(0,1fr);align-items:start;margin-top:18px}
+.template-row{display:flex;flex-direction:column;align-items:flex-start;width:100%;min-height:44px;text-align:left;overflow-wrap:anywhere;gap:4px}
+.template-row small{color:var(--text-secondary)}
+.template-editor header,.template-editor footer{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+.template-editor :is(button,input,select){min-height:44px}
+.template-editor .check{min-height:44px}
+@media(max-width:850px){.templates-layout{grid-template-columns:minmax(0,1fr)}.templates-layout:not(.show-detail)>.labels-detail,.templates-layout.show-detail>.labels-sidebar{display:none}.templates-layout .labels-detail{padding:0}.template-editor footer{justify-content:flex-start}}
+.settings-screen .template-editor .editor-content{display:grid;gap:16px;padding-top:16px}
+.settings-screen .template-editor label{grid-template-columns:minmax(0,1fr);gap:7px}
+.settings-screen .template-editor .check{display:flex}
