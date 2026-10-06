@@ -21,7 +21,7 @@ CI y Pages preparados localmente. Pages solo por ejecución manual futura.
 5. Ejecutar manualmente el workflow `Pages (manual)` y certificar en la web publicada el login Google, logout, aislamiento por usuario y sincronización Firestore.
 
 El workflow fija `VITE_CLOUD_BACKEND=firebase` e inyecta esas variables como `VITE_FIREBASE_*` durante `npm run check` (incluido el build). Si faltan o son inválidas, el build compila y Firebase permanece `unavailable`.
-El login usa popup sin scopes adicionales; cerrar o bloquear la ventana permite reintentar. La CSP permite conexiones Google APIs/Firebase y los frames de autenticación; el SDK sigue empaquetado y `script-src` permanece limitado a `'self'`.
+El login usa popup sin scopes adicionales; cerrar o bloquear la ventana permite reintentar. La CSP permite conexiones Google APIs/Firebase, los frames de autenticación y los scripts de `https://apis.google.com` necesarios para el popup de Google; el SDK de Firebase sigue empaquetado.
 El flujo canónico es npm (`npm ci`); `pnpm-lock.yaml` coexiste y se conserva, pero los workflows usan `package-lock.json`.
 
 ## Backups locales
