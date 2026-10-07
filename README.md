@@ -1,6 +1,6 @@
 # Mi Agenda
 
-Mi Agenda 1.0.0 — aplicación web/PWA local-first, esquema V1. Node 24.
+Mi Agenda 1.1.0 RC — aplicación web/PWA local-first, esquema V1. Node 24.
 
 Agenda local con tareas, recordatorios, eventos, notas, etiquetas, plantillas,
 CmdK, captura rápida, Time Blocking, Radar y copias ZIP/JSON.
@@ -19,8 +19,10 @@ CI valida cada push; Pages se despliega con el workflow manual.
 
 La certificación Firebase y los runs anteriores comunicados por el usuario
 corresponden al SHA `a48df5b17f1bdabe769737b5ad7bdaa5ea1f2d56`.
-El cierre de 1.0.0 exige una validación nueva y smoke sobre el SHA desplegado;
-consultar `VALIDATION_REPORT.md` y `RELEASE_NOTES.md`.
+La preparación local de 1.1.0 está en `RELEASE_NOTES_1.1.md`. La certificación
+automatizada no sustituye el smoke Firebase, notificaciones e iPhone físico.
+El deploy y la publicación requieren una instrucción posterior explícita.
+Consultar `docs/1.1-release-preparation.md`; `RELEASE_NOTES.md` conserva la historia de 1.0.0.
 
 ## Configurar Firebase para Pages
 
