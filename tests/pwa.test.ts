@@ -24,3 +24,18 @@ it('SW update bypasses stale HTTP cache when installing the new shell',async()=>
   ['https://example.test/app/assets/new.js','current release']
  ]);
 });
+
+it('opens cached shell offline and excludes Firebase, query and private routes',async()=>{
+ let fetchHandler!:(event:{request:{url:string;method:string};respondWith:(p:Promise<unknown>)=>void})=>void;
+ const cached={body:'offline shell'};
+ runInNewContext(generateWorker(['./','./index.html'],'offline'),{URL,self:{location:{origin:'https://example.test'},registration:{scope:'https://example.test/miagenda/'},addEventListener:(name:string,fn:typeof fetchHandler)=>{if(name==='fetch')fetchHandler=fn}},caches:{open:async()=>({match:async()=>cached})},fetch:async()=>{throw Error('offline')}});
+ let response:Promise<unknown>|undefined;fetchHandler({request:{url:'https://example.test/miagenda/',method:'GET'},respondWith:p=>{response=p}});expect(await response).toEqual(cached);
+ for(const url of ['https://firestore.googleapis.com/v1/data','https://example.test/miagenda/?token=secret','https://example.test/miagenda/private','https://example.test/miagenda/api']){response=undefined;fetchHandler({request:{url,method:'GET'},respondWith:p=>{response=p}});expect(response).toBeUndefined()}
+});
+for(const windows of [1,2])it('activates only explicit request from the sole open client: '+windows,async()=>{
+ let message!:(e:{data:{type:string};source:{id:string;postMessage:(data:unknown)=>void};waitUntil:(p:Promise<unknown>)=>void})=>void;
+ let activated=0,blocked=0,pending:Promise<unknown>|undefined;
+ runInNewContext(generateWorker(['./'],'test'),{self:{registration:{scope:'https://example.test/miagenda/'},addEventListener:(name:string,fn:typeof message)=>{if(name==='message')message=fn},clients:{matchAll:async()=>Array.from({length:windows},(_,i)=>({id:String(i),url:'https://example.test/miagenda/'}))},skipWaiting:()=>{activated++}},URL});
+ const event={data:{type:'unrelated'},source:{id:'0',postMessage:()=>{blocked++}},waitUntil:(p:Promise<unknown>)=>{pending=p}};
+ message(event);expect(activated).toBe(0);expect(pending).toBeUndefined();message({...event,data:{type:'ACTIVATE_WHEN_SAFE'}});await pending;expect(activated).toBe(windows===1?1:0);expect(blocked).toBe(windows===2?1:0);
+});

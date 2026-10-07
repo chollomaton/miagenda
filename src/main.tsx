@@ -17,5 +17,3 @@ void start().catch(() => {
   message.textContent = 'No se ha podido iniciar Mi Agenda. Recarga la página para volver a intentarlo.';
   (document.getElementById('root') ?? document.body).replaceChildren(message);
 });
-
-if (import.meta.env.PROD && 'serviceWorker' in navigator) { window.addEventListener('load', () => { void navigator.serviceWorker.register('./service-worker.js').catch(() => {}); }); }

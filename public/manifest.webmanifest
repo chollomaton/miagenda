@@ -1,6 +1,7 @@
 {
   "name": "Mi Agenda",
   "short_name": "Mi Agenda",
+  "id": "/miagenda/",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

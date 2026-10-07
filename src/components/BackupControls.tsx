@@ -35,8 +35,8 @@ export function BackupControls({store,onMessage}:{store:AgendaStore;onMessage:(m
   <button disabled={busy} onClick={()=>void perform(async()=>{await downloadBackupZIP(await checkedExport())})}>Exportar backup ZIP</button>
   <button disabled={busy} onClick={()=>void perform(async()=>{downloadBackup(await checkedExport())})}>Exportar JSON</button>
   <label>Importar backup<input disabled={busy} type="file" accept="application/zip,.zip,application/json,.json" onChange={event=>{const file=event.target.files?.[0];event.target.value='';if(file)void read(file)}}/></label>
-  {busy&&<p role="status">Procesando backup…</p>}
-  {backup&&<div className="notice">
+  {busy&&<p data-update-blocked="true" role="status">Procesando backup…</p>}
+  {backup&&<div data-update-blocked="true" className="notice">
    <p>Backup validado: {backup.entityCount} elementos.</p>
    <p>Combinar: {previewImport(store.entities,backup,'merge').create} nuevos, {previewImport(store.entities,backup,'merge').update} coincidencias que se combinarán. Reemplazar enviará {previewImport(store.entities,backup,'replace').delete} elementos a la papelera.</p>
    <button disabled={busy} onClick={()=>void perform(()=>apply('merge'))}>Combinar</button>
