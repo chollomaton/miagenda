@@ -1,4 +1,5 @@
 import {initializeApp} from 'firebase/app';
+import type {User} from 'firebase/auth';
 import {browserLocalPersistence,getAuth,GoogleAuthProvider,onAuthStateChanged,setPersistence,signInWithPopup,signOut} from 'firebase/auth';
 import {initializeFirestore,memoryLocalCache} from 'firebase/firestore';
 import {AuthManager} from '../auth/AuthManager';
@@ -13,6 +14,8 @@ import {firebaseScope} from './FirebaseConfig';
 export class FirebaseRuntime {
  state:'unavailable'|'signedOut'|'connecting'|'signedIn'='unavailable';
  session:AgendaSession|null=null;
+ sessionExpired=false;
+ private resume:((user:User|null)=>void)|null=null;
  private generation=0;
  revision=0;
  private listeners=new Set<()=>void>();
@@ -29,10 +32,10 @@ export class FirebaseRuntime {
    const sdkAuth=getAuth(app);this.sdkAuth=sdkAuth;
    const db=initializeFirestore(app,{localCache:memoryLocalCache()});
    await setPersistence(sdkAuth,browserLocalPersistence);
-   this.stop=onAuthStateChanged(sdkAuth,user=>{
+   const changed=(user:User|null)=>{
     const generation=++this.generation;
     this.session?.auth.expire();this.session=null;
-    this.state=user?'connecting':'signedOut';this.emit();
+    this.sessionExpired=false;this.state=user?'connecting':'signedOut';this.emit();
     if(!user)return;
     const uid=user.uid;
     const auth=new AuthManager({check:async()=>uid,signIn:async()=>uid,signOut:()=>signOut(sdkAuth)});
@@ -40,21 +43,22 @@ export class FirebaseRuntime {
     this.session=session;
     void (async()=>{
      await auth.check();
+     auth.onInvalidate(()=>{if(this.session===session){this.sessionExpired=auth.state==='expired';this.session=null;this.state='signedOut';this.emit()}});
      const authGeneration=auth.generation;
      const valid=()=>generation===this.generation&&sdkAuth.currentUser?.uid===uid&&auth.valid(authGeneration);
      if(!valid())return;
      await session.attach(new CloudKitRepository(new FirebaseCloudTransport(db,uid,valid)),target);
      if(!valid()){auth.expire();return}
-     auth.onInvalidate(()=>{if(this.session===session){this.session=null;this.state='signedOut';this.emit()}});
      this.state='signedIn';this.emit();
     })().catch(()=>{if(generation===this.generation){auth.expire();this.session=null;this.state='unavailable';this.emit()}});
-   },()=>{this.invalidate();this.state='unavailable';this.emit()});
+   };
+   this.resume=changed;this.stop=onAuthStateChanged(sdkAuth,changed,()=>{this.invalidate();this.state='unavailable';this.emit()});
   }catch{this.state='unavailable';this.emit()}
  }
  async login(){
   if(!this.sdkAuth)return;
   const generation=this.generation;
-  try{await signInWithPopup(this.sdkAuth,new GoogleAuthProvider())}catch(error){
+  try{await signInWithPopup(this.sdkAuth,new GoogleAuthProvider());if(generation===this.generation&&this.sessionExpired&&this.sdkAuth.currentUser)this.resume?.(this.sdkAuth.currentUser)}catch(error){
    if(generation!==this.generation)return;
    const code=typeof error==='object'&&error!==null&&'code' in error?error.code:null;
    const fatal=['auth/invalid-api-key','auth/app-not-authorized','auth/unauthorized-domain','auth/operation-not-allowed','auth/invalid-auth-event'];
@@ -64,6 +68,6 @@ export class FirebaseRuntime {
   }
  }
  private invalidate(){++this.generation;this.session?.auth.expire();this.session=null}
- async logout(){this.invalidate();this.state='signedOut';this.emit();if(this.sdkAuth)await signOut(this.sdkAuth)}
- dispose(){this.stop?.();this.stop=null;this.invalidate()}
+ async logout(){this.invalidate();this.sessionExpired=false;this.state='signedOut';this.emit();if(this.sdkAuth)await signOut(this.sdkAuth)}
+ dispose(){this.resume=null;this.stop?.();this.stop=null;this.invalidate()}
 }
