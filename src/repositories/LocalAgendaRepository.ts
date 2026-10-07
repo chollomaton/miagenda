@@ -6,6 +6,7 @@ export class LocalAgendaRepository {
  get entities(){return this.read()}
  get writerID(){return this.writer()}
  flush(){return this.drained()}
+ async synchronize(){await this.sync?.sync()}
  connectSync(sync:{sync():Promise<void>}|null){this.sync=sync}
  async commit(changes:Entity[]|(()=>Entity[])){await this.transaction(changes);void this.sync?.sync().catch(()=>{})}
 }
