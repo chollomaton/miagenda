@@ -10,6 +10,6 @@ export class AgendaSession {
  constructor(public auth:AuthManager,private persistence:(identity:string)=>Persistence=id=>new IndexedDBPersistence(id)){
   auth.onInvalidate(()=>{this.sync?.stop();this.store?.repository.connectSync(null);this.store?.detach();this.store=null;this.sync=null});
  }
- async attach(remote:AgendaRepository,target?:Window){const generation=this.auth.generation,identity=this.auth.identity;if(!identity||!this.auth.valid(generation))throw Error('SIGNED_OUT');const store=new AgendaStore(this.persistence(identity));await store.boot();if(!this.auth.valid(generation)){store.detach();return}this.store=store;this.sync=new SyncEngine(store,remote,this.auth);store.repository.connectSync(this.sync);if(target)this.sync.start(target)}
+ async attach(remote:AgendaRepository,target?:Window){const generation=this.auth.generation,identity=this.auth.identity;if(!identity||!this.auth.valid(generation))throw Error('SIGNED_OUT');const store=new AgendaStore(this.persistence(identity),undefined,'sync-enabled');await store.boot();if(!this.auth.valid(generation)){store.detach();return}this.store=store;this.sync=new SyncEngine(store,remote,this.auth);store.repository.connectSync(this.sync);if(target)this.sync.start(target)}
  async logout(){await this.auth.signOut()}
 }
