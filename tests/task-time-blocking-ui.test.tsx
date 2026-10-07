@@ -55,11 +55,11 @@ it('Task editor schedules, renders Day/Week, opens the original and reflects com
  fireEvent.click(screen.getByRole('button',{name:'Planificar…'}));const schedule=screen.getByRole('dialog',{name:'Planificar tarea'});fireEvent.change(within(schedule).getByLabelText('Fecha'),{target:{value:'2026-10-05'}});fireEvent.change(within(schedule).getByLabelText('Hora'),{target:{value:'10:00'}});fireEvent.click(within(schedule).getByRole('button',{name:'Guardar'}));await waitFor(()=>expect(screen.queryByRole('dialog',{name:'Planificar tarea'})).toBeNull());
  expect(screen.getByRole('button',{name:'Modificar…'})).toBeInTheDocument();fireEvent.click(screen.getByRole('button',{name:'Guardar'}));await waitFor(()=>expect(screen.queryByRole('dialog')).toBeNull());
  fireEvent.click(within(screen.getByRole('navigation',{name:'Secciones'})).getByRole('button',{name:'Calendario'}));fireEvent.click(screen.getByRole('button',{name:'Día'}));fireEvent.change(screen.getByLabelText('Fecha calendario'),{target:{value:'2026-10-05'}});
- const blockName='✓ 10:00 Trabajo profundo';expect(screen.getByRole('button',{name:blockName})).toBeInTheDocument();expect(screen.queryByRole('button',{name:'18:00 Trabajo profundo'})).toBeNull();
+ const blockName='✓ 10:00 Trabajo profundo';expect(await screen.findByRole('button',{name:blockName})).toBeInTheDocument();expect(screen.queryByRole('button',{name:'18:00 Trabajo profundo'})).toBeNull();
  fireEvent.click(screen.getByRole('button',{name:blockName}));expect(screen.getByLabelText('Título')).toHaveValue(task.fields.title);fireEvent.click(screen.getByRole('button',{name:'Cerrar'}));
- fireEvent.click(screen.getByRole('button',{name:'Semana'}));expect(screen.getByRole('button',{name:blockName})).toBeInTheDocument();
- await act(()=>store.complete(task.id,true));expect(screen.queryByRole('button',{name:blockName})).toBeNull();await act(()=>store.service.reopen(task.id));expect(screen.getByRole('button',{name:blockName})).toBeInTheDocument();
- await act(()=>store.service.delete(task.id));expect(screen.queryByRole('button',{name:blockName})).toBeNull();await act(()=>store.service.restore(task.id));expect(screen.getByRole('button',{name:blockName})).toBeInTheDocument();
+ fireEvent.click(screen.getByRole('button',{name:'Semana'}));expect(await screen.findByRole('button',{name:blockName})).toBeInTheDocument();
+ await act(()=>store.complete(task.id,true));expect(screen.queryByRole('button',{name:blockName})).toBeNull();await act(()=>store.service.reopen(task.id));expect(await screen.findByRole('button',{name:blockName})).toBeInTheDocument();
+ await act(()=>store.service.delete(task.id));expect(screen.queryByRole('button',{name:blockName})).toBeNull();await act(()=>store.service.restore(task.id));expect(await screen.findByRole('button',{name:blockName})).toBeInTheDocument();
  fireEvent.click(screen.getByRole('button',{name:blockName}));fireEvent.click(screen.getByRole('button',{name:'Quitar planificación'}));await settled(store);fireEvent.click(screen.getByRole('button',{name:'Cerrar'}));expect(screen.queryByRole('button',{name:blockName})).toBeNull();expect(store.entities[0].fields.due).toBe(task.fields.due);
 },15000);
 it('recurrent Task editor explains guard and offers no scheduling action',async()=>{const {task,store}=await fixture();await store.patch(task.id,{recurrence:{frequency:'daily',interval:1,weekdays:[],monthDay:null,count:null,until:null,exceptions:[]}});render(<App providedStore={store}/>);fireEvent.click(within(screen.getByRole('navigation',{name:'Secciones'})).getByRole('button',{name:'Tareas'}));fireEvent.click(screen.getByRole('button',{name:/^Trabajo profundo/}));expect(screen.getByText('Las tareas recurrentes todavía no pueden planificarse en el calendario.')).toBeInTheDocument();expect(screen.queryByRole('button',{name:'Planificar…'})).toBeNull()});
@@ -71,7 +71,7 @@ it.each([390,1280])('Day/Week smoke at viewport width %s keeps controls and task
  fireEvent.change(screen.getByLabelText('Fecha calendario'),{target:{value:'2026-10-05'}});
  for(const view of ['Día','Semana']){
   fireEvent.click(screen.getByRole('button',{name:view}));
-  expect(document.querySelectorAll('.timeline')).toHaveLength(view==='Día'?1:7);
+  await waitFor(()=>expect(document.querySelectorAll('.timeline')).toHaveLength(view==='Día'?1:7));
   fireEvent.click(screen.getByRole('button',{name:'✓ 10:00 Trabajo profundo'}));
   screen.getByRole('button',{name:'Modificar…'}).focus();fireEvent.click(screen.getByRole('button',{name:'Modificar…'}));
   expect(screen.getByRole('dialog',{name:'Modificar planificación'})).toBeInTheDocument();

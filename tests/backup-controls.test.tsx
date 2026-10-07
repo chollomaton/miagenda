@@ -15,7 +15,7 @@ async function fixture(inApp=false){
  const message=vi.fn(),zip=vi.spyOn(files,'downloadBackupZIP').mockResolvedValue(),json=vi.spyOn(files,'downloadBackup').mockImplementation(()=>{});
  const save=vi.spyOn(store.persistence,'save');
  const view=render(inApp?<App providedStore={store}/>:<BackupControls store={store} onMessage={message}/>);
- if(inApp){fireEvent.click(screen.getByRole('button',{name:'Ajustes'}));fireEvent.click(screen.getByRole('button',{name:'Datos y recuperación'}))}
+ if(inApp){fireEvent.click(screen.getByRole('button',{name:'Ajustes'}));fireEvent.click(screen.getByRole('button',{name:'Datos y recuperación'}));await screen.findByRole('button',{name:'Exportar backup ZIP'})}
  return {store,existing,message,zip,json,save,...view};
 }
 async function incoming(zip=true){

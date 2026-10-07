@@ -13,6 +13,7 @@ async function fixture(definition?:TemplateDefinition){
  render(<App providedStore={store}/>);
  fireEvent.click(within(screen.getByRole('navigation',{name:'Secciones'})).getByRole('button',{name:'Ajustes'}));
  fireEvent.click(screen.getByRole('button',{name:'Plantillas'}));
+ await screen.findByRole('button',{name:'Nueva plantilla'});
  return {store,template,writes};
 }
 async function settled(store:AgendaStore){await act(async()=>{await store.flush()})}
