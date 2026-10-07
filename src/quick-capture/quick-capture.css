@@ -7,4 +7,4 @@
 .capture-preview dd{margin:0}.capture-preview dt{color:var(--muted)}
 .quick-capture fieldset button{margin:4px;min-height:44px}
 .quick-capture footer{margin-top:24px;flex-wrap:wrap}.quick-capture footer button{min-height:44px}
-@media(max-width:699px){.search-dialog:has(.quick-capture){width:100%;min-height:100dvh}.quick-capture footer button{flex:1}}
+@media(max-width:699px){.search-dialog:has(.quick-capture){width:100%;min-height:0;max-height:100%;overflow-y:auto;padding-bottom:max(16px,env(safe-area-inset-bottom))}.quick-capture footer button{flex:1}}
