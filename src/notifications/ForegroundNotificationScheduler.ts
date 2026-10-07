@@ -20,8 +20,9 @@ export function notificationCandidates(entities:Entity[],now:number):Notice[] {
     if(at>=now-RECENT_WINDOW_MS&&at<=now+HORIZON_MS)result.push({key:entity.id+':'+occurrence.start+':alert:'+minutes,at,title:f.title});
    }
   }
+  // A block starting at the due instant shares the zero-offset occurrence tag.
   const block=scheduledTaskBlock(entity);
-  if(block){const at=Date.parse(block.startAt);if(at>=now-RECENT_WINDOW_MS&&at<=now+HORIZON_MS)result.push({key:entity.id+':'+block.startAt+':block',at,title:f.title})}
+  if(block){const at=Date.parse(block.startAt);if(at>=now-RECENT_WINDOW_MS&&at<=now+HORIZON_MS)result.push({key:entity.id+':'+block.startAt+':alert:0',at,title:f.title})}
  }
  return result.sort((a,b)=>a.at-b.at||a.key.localeCompare(b.key));
 }
