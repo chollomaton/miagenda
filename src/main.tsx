@@ -5,10 +5,10 @@ import './styles/native.css';
 async function start() {
   const container = document.getElementById('root');
   if (!container) throw new Error('Missing root container');
-  const [{ createRoot }, { StrictMode }, { CloudApp }, { ErrorBoundary }] = await Promise.all([
-    import('react-dom/client'), import('react'), import('./app/CloudApp'), import('./components/ErrorBoundary'),
+  const [{ createRoot }, { StrictMode }, { StartupApp }, { ErrorBoundary }] = await Promise.all([
+    import('react-dom/client'), import('react'), import('./app/StartupApp'), import('./components/ErrorBoundary'),
   ]);
-  createRoot(container).render(<StrictMode><ErrorBoundary><CloudApp /></ErrorBoundary></StrictMode>);
+  createRoot(container).render(<StrictMode><ErrorBoundary><StartupApp /></ErrorBoundary></StrictMode>);
 }
 
 void start().catch(() => {

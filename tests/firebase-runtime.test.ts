@@ -78,3 +78,22 @@ it('M3C CloudApp expiration shows an attention alert and re-login action',async(
  const original=FirebaseRuntime.prototype.start;const start=vi.spyOn(FirebaseRuntime.prototype,'start').mockImplementation(function(this:FirebaseRuntime){return original.call(this)});const currentRuntime=()=>start.mock.contexts[0] as FirebaseRuntime;
  try{render(createElement(CloudApp));const runtime=currentRuntime();await waitFor(()=>expect(runtime.state).toBe('signedOut')); sdk.auth.currentUser={uid:'A'};await act(async()=>{sdk.changed(sdk.auth.currentUser)});await waitFor(()=>expect(runtime.state).toBe('signedIn'));await act(async()=>{runtime.session!.auth.expire()});expect(screen.getByRole('alert')).toHaveTextContent('Tu sesión ha caducado. Vuelve a entrar para continuar sincronizando.');sdk.popup.mockResolvedValueOnce({});fireEvent.click(screen.getByRole('button',{name:'Entrar con Google'}));await waitFor(()=>expect(runtime.state).toBe('signedIn'));expect(screen.queryByText(/Tu sesión ha caducado/)).toBeNull()}finally{currentRuntime()?.dispose();start.mockRestore()}
 });
+it('M5 deferred cloud starts once and retains its runtime across account transitions',async()=>{
+ for(const [key,value] of Object.entries({VITE_CLOUD_BACKEND:'firebase',VITE_FIREBASE_API_KEY:config.apiKey,VITE_FIREBASE_AUTH_DOMAIN:config.authDomain,VITE_FIREBASE_PROJECT_ID:config.projectId,VITE_FIREBASE_APP_ID:config.appId}))vi.stubEnv(key,value);
+ const {StartupApp}=await import('../src/app/StartupApp');
+ const original=FirebaseRuntime.prototype.start;
+ const start=vi.spyOn(FirebaseRuntime.prototype,'start').mockImplementation(function(this:FirebaseRuntime){return original.call(this)});
+ let runtime:FirebaseRuntime|undefined;
+ try{
+  render(createElement(StartupApp));expect(start).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole('button',{name:'Entrar con Google'}));
+  await waitFor(()=>expect(start).toHaveBeenCalledTimes(1));runtime=start.mock.contexts[0] as FirebaseRuntime;
+  await waitFor(()=>expect(runtime!.state).toBe('signedOut'));
+  fireEvent.click(screen.getByRole('button',{name:'Entrar con Google'}));await waitFor(()=>expect(sdk.popup).toHaveBeenCalled());
+  sdk.auth.currentUser={uid:'M5'};await act(async()=>{sdk.changed(sdk.auth.currentUser)});
+  await waitFor(()=>expect(runtime!.state).toBe('signedIn'));
+  await screen.findByRole('navigation',{name:'Secciones'});expect(start).toHaveBeenCalledTimes(1);
+  await act(async()=>{await runtime!.logout()});
+  await screen.findByRole('button',{name:'Abrir agenda local'});expect(start).toHaveBeenCalledTimes(1);
+ }finally{runtime?.dispose();start.mockRestore()}
+});
