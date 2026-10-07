@@ -1,3 +1,4 @@
+import {StrictMode} from 'react';
 import {act,fireEvent,render,screen} from '@testing-library/react';
 import {afterEach,expect,it,vi} from 'vitest';
 import {readFileSync} from 'node:fs';
@@ -30,7 +31,7 @@ it.each(['local-only','sync-enabled'] as const)('M6 %s hook handles updates, foc
  vi.useFakeTimers();vi.setSystemTime(now);const {show,request}=mockNotification('granted');const store=new AgendaStore(new MemoryPersistence(),undefined,mode);await store.boot();
  await store.create('Reminder',{title:'Primer aviso',due:'2026-10-07T08:00:01.000Z',alerts:[0]});
  function Host(){useForegroundNotifications(store,true);return null}
- const ui=render(<Host/>);for(let i=0;i<10;i++)ui.rerender(<Host/>);expect(vi.getTimerCount()).toBe(1);
+ const ui=render(<StrictMode><Host/></StrictMode>);for(let i=0;i<10;i++)ui.rerender(<StrictMode><Host/></StrictMode>);expect(vi.getTimerCount()).toBe(1);
  await act(async()=>{await store.patch(store.entities[0].id,{title:'Nuevo título',due:'2026-10-07T08:00:02.000Z'})});
  act(()=>vi.advanceTimersByTime(1000));expect(show).not.toHaveBeenCalled();act(()=>vi.advanceTimersByTime(1000));expect(show).toHaveBeenCalledWith('Nuevo título',expect.objectContaining({tag:expect.any(String)}));
  act(()=>{fireEvent.focus(window);document.dispatchEvent(new Event('visibilitychange'))});expect(show).toHaveBeenCalledOnce();expect(request).not.toHaveBeenCalled();

@@ -1,3 +1,4 @@
+import {editingOpen,requestSafeUpdate} from '../src/pwa/updates';
 import {fireEvent,render,screen,waitFor} from '@testing-library/react';
 import {expect,it,vi} from 'vitest';
 import {AuthManager} from '../src/auth/AuthManager';
@@ -31,4 +32,23 @@ it('pending remote sync displays local success and reconnection message',async()
 });
 it('download error says source unchanged and offers retry',async()=>{
  const f=await setup();f.download.mockRejectedValueOnce(Error('DOWNLOAD_FAILED'));render(<LocalMigrationControls migration={f.migration}/>);fireEvent.click(screen.getByRole('button',{name:'Copiar a mi cuenta'}));await screen.findByText('No se pudieron copiar los datos');expect(screen.getByText('La Agenda local no se ha modificado.')).toBeVisible();expect(screen.getByRole('button',{name:'Copiar a mi cuenta'})).toBeEnabled();f.migration.dispose();
+});
+
+it('RC PWA activation waits for an in-flight local migration and resumes after it settles',async()=>{
+ const f=await setup();let release!:()=>void;
+ f.download.mockImplementationOnce(()=>new Promise<void>(resolve=>{release=resolve}));
+ render(<LocalMigrationControls migration={f.migration}/>);
+ fireEvent.click(screen.getByRole('button',{name:'Copiar a mi cuenta'}));
+ await waitFor(()=>expect(f.download).toHaveBeenCalledOnce());
+ const container=new EventTarget() as ServiceWorkerContainer;
+ const worker={postMessage:vi.fn()} as unknown as ServiceWorker;
+ const flush=vi.fn(async()=>{}),reload=vi.fn();
+ const stop=requestSafeUpdate(worker,container,flush,reload,vi.fn());
+ try{
+  expect(editingOpen()).toBe(true);expect(flush).not.toHaveBeenCalled();
+  container.dispatchEvent(new Event('controllerchange'));expect(reload).not.toHaveBeenCalled();
+  release();await screen.findByText('Datos copiados y sincronizados');
+  await waitFor(()=>expect(worker.postMessage).toHaveBeenCalledWith({type:'ACTIVATE_WHEN_SAFE'}));
+  container.dispatchEvent(new Event('controllerchange'));expect(reload).toHaveBeenCalledOnce();
+ }finally{release();stop();f.migration.dispose()}
 });

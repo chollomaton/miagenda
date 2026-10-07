@@ -27,7 +27,7 @@ export function requestSafeUpdate(worker: ServiceWorker, container: ServiceWorke
  const changed=()=>{if(!requested)return;activated=true;void activate();};
  const message=(event:MessageEvent)=>{if(event.source===worker&&event.data?.type==='UPDATE_BLOCKED')fail('Cierra las otras pestañas de Mi Agenda y vuelve a intentarlo.');};
  container.addEventListener('controllerchange',changed);container.addEventListener('message',message);
- const observer=new MutationObserver(()=>void activate());observer.observe(document.body,{childList:true,subtree:true});
+ const observer=new MutationObserver(()=>void activate());observer.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['data-update-blocked']});
  document.addEventListener('focusout',activate);void activate();
  return ()=>{disposed=true;observer.disconnect();document.removeEventListener('focusout',activate);container.removeEventListener('controllerchange',changed);container.removeEventListener('message',message);};
 }
