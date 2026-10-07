@@ -85,8 +85,8 @@ describe('Template backups and references',()=>{
   const fresh=await store();await importBackup(fresh,b,'replace','REEMPLAZAR');expect(fresh.entities).toEqual([incoming]);
  });
  it('deleted Labels remain referenced; missing Labels report an orphan without mutation',async()=>{
-  const label=createEntity('Label'),e=template({...task,values:{...task.values,labelIDs:[label.id]}}),deleted=updateEntity(label,{},'writer','deleted'),before=clone(e);expect(integrity([e,deleted]).issues).toEqual([]);expect(integrity([e]).issues).toEqual([{id:e.id,code:'ORPHAN_LABEL',status:'WARNING'}]);expect(e).toEqual(before);
-  const s=await store();await s.commit([e,deleted]);for(const o of [...s.outbox])await s.remote([],undefined,o.operationID);await expect(s.purge([label.id],'PURGAR')).rejects.toThrow('PURGE_REFERENCED');expect(current(s,e.id)).toEqual(before);
+  const label=createEntity('Label'),e=template({...task,values:{...task.values,labelIDs:[label.id]}}),deleted=updateEntity(label,{},'writer','deleted'),before=clone(e);expect(integrity([e,deleted]).issues).toEqual([{id:e.id,code:'DELETED_LABEL_REFERENCE',status:'WARNING'}]);expect(integrity([e]).issues).toEqual([{id:e.id,code:'ORPHAN_LABEL',status:'WARNING'}]);expect(e).toEqual(before);
+  const s=await store();await s.commit([e,deleted]);for(const o of [...s.outbox])await s.remote([],undefined,o.operationID);await expect(s.purge([label.id],'PURGAR')).rejects.toThrow('PURGE_NOT_ACKNOWLEDGED');expect(current(s,e.id)).toEqual(before);
  });
  it('global search and calendar exclude Template',()=>{const e=template(),t=createEntity('Task',{title:'Reusable'});expect(select([e,t])).toEqual([t]);expect(select([e,t],{query:'Reusable'})).toEqual([t]);expect(select([e],{kind:'Template'})).toEqual([]);expect(select([updateEntity(e,{},'writer','deleted')],{trash:true})).toEqual([]);expect(occurrences(e,'2026-01-01','2026-12-31')).toEqual([]);});
 });
