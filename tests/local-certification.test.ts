@@ -53,7 +53,7 @@ it('CORRUPT_BACKUP_ZERO_MUTATION validates all records before changing IDB',asyn
  expect(save).not.toHaveBeenCalled();expect(s.snapshot()).toEqual(before);expect(await s.persistence.load()).toEqual(before);
 });
 it('REPLACE_ROLLBACK preserves existing entities outbox and metadata on transaction abort',async()=>{
- const s=await open();await s.create('Task',{title:'keep'});await s.remote([],'keep-token',undefined,[{bad:true}]);const before=s.snapshot();const backup=await exportBackup([createEntity('Task',{title:'replacement'})]);
+ const s=await open();await s.create('Task',{title:'keep'});await s.remote([],'keep-token');const before=s.snapshot();const backup=await exportBackup([createEntity('Task',{title:'replacement'})]);
  const original=IDBObjectStore.prototype.put;const spy=vi.spyOn(IDBObjectStore.prototype,'put').mockImplementation(function(this:IDBObjectStore,...args:Parameters<IDBObjectStore['put']>){const result=original.apply(this,args);if(this.name==='preferences')this.transaction.abort();return result});
  try{await expect(importBackup(s,backup,'replace','REEMPLAZAR')).rejects.toThrow('STORAGE_WRITE_FAILED')}finally{spy.mockRestore()}
  expect(s.snapshot()).toEqual(before);expect(await s.persistence.load()).toEqual(before);

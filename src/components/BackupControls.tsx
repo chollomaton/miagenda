@@ -24,20 +24,21 @@ export function BackupControls({store,onMessage}:{store:AgendaStore;onMessage:(m
   if(!backup)return;
   const token=generation.current;
   if(mode==='replace'){
-   await downloadBackupZIP(await exportBackup(store.entities));
+   await downloadBackupZIP(await checkedExport());
    if(token!==generation.current)return;
   }
   await importBackup(store,backup,mode,confirmation);
   if(token===generation.current){setBackup(null);setConfirmation('');onMessage('Backup importado.')}
  }
+ async function checkedExport(){if(store.quarantine.length)throw Error('INTEGRITY_FAILED');return exportBackup(store.entities)}
  return <>
-  <button disabled={busy} onClick={()=>void perform(async()=>{await downloadBackupZIP(await exportBackup(store.entities))})}>Exportar backup ZIP</button>
-  <button disabled={busy} onClick={()=>void perform(async()=>{downloadBackup(await exportBackup(store.entities))})}>Exportar JSON</button>
+  <button disabled={busy} onClick={()=>void perform(async()=>{await downloadBackupZIP(await checkedExport())})}>Exportar backup ZIP</button>
+  <button disabled={busy} onClick={()=>void perform(async()=>{downloadBackup(await checkedExport())})}>Exportar JSON</button>
   <label>Importar backup<input disabled={busy} type="file" accept="application/zip,.zip,application/json,.json" onChange={event=>{const file=event.target.files?.[0];event.target.value='';if(file)void read(file)}}/></label>
   {busy&&<p role="status">Procesando backup…</p>}
   {backup&&<div className="notice">
    <p>Backup validado: {backup.entityCount} elementos.</p>
-   <p>Combinar: {previewImport(store.entities,backup,'merge').create} nuevos, {previewImport(store.entities,backup,'merge').update} existentes. Reemplazar enviará {previewImport(store.entities,backup,'replace').delete} elementos a la papelera.</p>
+   <p>Combinar: {previewImport(store.entities,backup,'merge').create} nuevos, {previewImport(store.entities,backup,'merge').update} coincidencias que se combinarán. Reemplazar enviará {previewImport(store.entities,backup,'replace').delete} elementos a la papelera.</p>
    <button disabled={busy} onClick={()=>void perform(()=>apply('merge'))}>Combinar</button>
    <label>Escribe REEMPLAZAR<input disabled={busy} value={confirmation} onChange={event=>setConfirmation(event.target.value)}/></label>
    <button disabled={busy||confirmation!=='REEMPLAZAR'} onClick={()=>void perform(()=>apply('replace'))}>Guardar copia y reemplazar</button>

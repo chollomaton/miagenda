@@ -33,7 +33,7 @@ it('integrates ZIP and legacy JSON export in settings without writes',async()=>{
 it.each([false,true])('previews and cancels valid backup without mutation, ZIP=%s',async zip=>{
  const {store,save}=await fixture(),before=store.snapshot();upload(await incoming(zip));
  expect(await screen.findByText('Backup validado: 1 elementos.')).toBeInTheDocument();
- expect(screen.getByText(/Combinar: 1 nuevos, 0 existentes/)).toBeInTheDocument();expect(screen.getByRole('button',{name:'Guardar copia y reemplazar'})).toBeDisabled();
+ expect(screen.getByText(/Combinar: 1 nuevos, 0 coincidencias/)).toBeInTheDocument();expect(screen.getByRole('button',{name:'Guardar copia y reemplazar'})).toBeDisabled();
  fireEvent.click(screen.getByRole('button',{name:'Cancelar'}));expect(screen.queryByText(/Backup validado/)).toBeNull();expect(save).not.toHaveBeenCalled();expect(store.snapshot()).toEqual(before);
 });
 it('merges ZIP only after explicit confirmation through the existing import flow',async()=>{
