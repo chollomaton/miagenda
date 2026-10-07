@@ -2,10 +2,11 @@ import {downloadBackup,parseBackup} from './backup';
 import type {Backup} from './backup';
 import {decodeBackupZIP,encodeBackupZIP,MAX_BACKUP_BYTES} from './zip';
 
-export async function downloadBackupZIP(backup:Backup){
+export async function downloadBackupZIP(backup:Backup,valid:()=>boolean=()=>true){
  // Use the existing validator and entity checksum before packaging any data.
  await parseBackup(JSON.stringify(backup));
  const bytes=await encodeBackupZIP(JSON.stringify(backup,null,2));
+ if(!valid())throw Error('STALE_SESSION');
  const url=URL.createObjectURL(new Blob([bytes],{type:'application/zip'}));
  try{
   const link=document.createElement('a');link.href=url;
