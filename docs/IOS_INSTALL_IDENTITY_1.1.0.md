@@ -1,5 +1,7 @@
 # Identidad de instalación iOS 1.1.0
 
+> Cierre 1.1.0, 8 de octubre de 2026: el usuario confirmó que sigue apareciendo la M antigua y decidió aplazar la investigación. Limitación visual conocida no bloqueante, sin efecto sobre funcionamiento, datos, Firebase ni PWA. Los pasos y fallbacks siguientes quedan como registro histórico, sin ejecución adicional en este cierre.
+
 La RC cambia `id` de `/miagenda/` a `/miagenda/?app-id=1.1.0` y `start_url` de `./` a `./?pwa=1.1.0`. Son valores estables para esta versión, con origen `https://chollomaton.github.io` y scope `/miagenda/` intactos. Los cuatro shortcuts y los filenames reales nuevos de los iconos permanecen intactos. El HTML conserva un único apple-touch-icon PNG RGB de 180×180; precomposed no aporta una solución documentada a la caché de identidad.
 
 El worker reconoce exclusivamente la navegación al inicio con `?pwa=1.1.0` y sirve el shell raíz cacheado, permitiendo abrir la nueva instalación offline después de instalar/activar su worker. No amplía la caché a otras queries ni rutas privadas.

@@ -1,6 +1,6 @@
 # Mi Agenda
 
-Mi Agenda 1.1.0 RC — aplicación web/PWA local-first, esquema V1. Node 24.
+Mi Agenda 1.1.0 — aplicación web/PWA local-first, esquema V1. Node 24.
 
 Agenda local con tareas, recordatorios, eventos, notas, etiquetas, plantillas,
 CmdK, captura rápida, Time Blocking, Radar y copias ZIP/JSON.
@@ -17,12 +17,17 @@ Firebase se configura mediante variables de build; no incluye credenciales de us
 CloudKit real sigue pendiente de configuración externa.
 CI valida cada push; Pages se despliega con el workflow manual.
 
-La certificación Firebase y los runs anteriores comunicados por el usuario
-corresponden al SHA `a48df5b17f1bdabe769737b5ad7bdaa5ea1f2d56`.
-La preparación local de 1.1.0 está en `RELEASE_NOTES_1.1.md`. La certificación
-automatizada no sustituye el smoke Firebase, notificaciones e iPhone físico.
-El deploy y la publicación requieren una instrucción posterior explícita.
-Consultar `docs/1.1-release-preparation.md`; `RELEASE_NOTES.md` conserva la historia de 1.0.0.
+Las novedades y limitaciones finales de 1.1.0 están en `RELEASE_NOTES_1.1.md`.
+La RC `5406535b071dd1976a44b6f7e8145c56bfff956e` pasó CI y Pages;
+el cierre final valida y despliega el nuevo SHA de main antes del tag.
+La certificación automatizada no sustituye las pruebas físicas de notificaciones e iPhone.
+En iOS, el icono de pantalla de inicio puede conservar la M antigua por caché/metadata
+Web Clip. Es una limitación visual conocida y no bloqueante: no afecta al funcionamiento,
+los datos, Firebase ni la PWA. Su investigación queda aplazada por decisión del usuario.
+No hay push con la app totalmente cerrada; la notificación real foreground es opcional
+y sigue sin certificación física. El chunk cloud/Firebase >500 kB mantiene el aviso de build.
+`docs/1.1-release-preparation.md` conserva la preparación histórica de la RC;
+`RELEASE_NOTES.md` conserva la historia de 1.0.0.
 
 ## Configurar Firebase para Pages
 
