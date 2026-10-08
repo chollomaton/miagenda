@@ -32,10 +32,10 @@ describe('readonly mirror UI',()=>{
  it('keeps readable UI during offline refresh and hides commands',async()=>{
   const {transport}=await renderMirror();transport.offline=true;fireEvent.click(screen.getByRole('button',{name:'Actualizar copia'}));await waitFor(()=>expect(screen.getByRole('alert')).toHaveTextContent('Se conserva la última copia'));expect(screen.getByText(/Sin conexión · copia de/)).toBeInTheDocument();navigate('Notas rápidas');expect(screen.getByRole('button',{name:/Ideas para clase/})).toBeInTheDocument();
  });
- it('does not expose source selector on default startup',()=>{
-  window.history.replaceState({},'','/');render(<StartupApp/>);expect(screen.queryByRole('navigation',{name:'Fuente de agenda'})).not.toBeInTheDocument();expect(screen.getByRole('button',{name:'Abrir agenda local'})).toBeInTheDocument();
+ it('boots directly to the empty iCloud dashboard without a selector or local landing',()=>{
+  window.history.replaceState({},'','/');render(<StartupApp/>);expect(screen.getByRole('searchbox',{name:'Buscar en iCloud'})).toBeInTheDocument();expect(screen.queryByRole('navigation',{name:'Fuente de agenda'})).not.toBeInTheDocument();expect(screen.queryByRole('button',{name:'Abrir agenda local'})).not.toBeInTheDocument();expect(screen.queryByText(/Datos de ejemplo/)).not.toBeInTheDocument();
  });
- it('preview switch starts Online and separates local iCloud demo',async()=>{
-  window.history.replaceState({},'','/?mirrorPreview=1');render(<StartupApp/>);const switcher=screen.getByRole('navigation',{name:'Fuente de agenda'});expect(within(switcher).getByRole('button',{name:'Online'})).toHaveAttribute('aria-pressed','true');fireEvent.click(within(switcher).getByRole('button',{name:'iCloud'}));await screen.findByText('iCloud · Solo lectura · Datos de ejemplo',{}, {timeout:5000});expect(screen.queryByRole('button',{name:'Abrir agenda local'})).not.toBeInTheDocument();fireEvent.click(screen.getByRole('button',{name:'Online'}));await screen.findByRole('button',{name:'Abrir agenda local'});expect(screen.queryByText('Ideas para clase')).not.toBeInTheDocument();window.history.replaceState({},'','/');
+ it('explicit dev preview opens directly in iCloud without Online',async()=>{
+  window.history.replaceState({},'','/?mirrorPreview=1');render(<StartupApp/>);await screen.findByText('iCloud · Solo lectura · Datos de ejemplo',{}, {timeout:5000});expect(screen.queryByRole('button',{name:'Online'})).not.toBeInTheDocument();window.history.replaceState({},'','/');
  });
 });

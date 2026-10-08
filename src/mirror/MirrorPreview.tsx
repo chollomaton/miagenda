@@ -8,7 +8,7 @@ import {MemoryMirrorTransport} from './transport';
 import {MirrorReader} from './reader';
 import {MirrorApp} from './MirrorApp';
 /** Dev-only composition with synthetic fixtures. Never a Firebase/iCloud connection. */
-export function MirrorPreview({sourceControl}:{sourceControl:ReactNode}) {
+export function MirrorPreview({sourceControl}:{sourceControl?:ReactNode}) {
  const [reader,setReader]=useState<MirrorReader|null>(null),[error,setError]=useState('');
  useEffect(()=>{
   let disposed=false;let active:MirrorReader|null=null;let cache:IndexedDBMirrorCache|MemoryMirrorCache|null=null;
