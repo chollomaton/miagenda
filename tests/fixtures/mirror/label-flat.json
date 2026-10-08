@@ -1,0 +1,10 @@
+{
+  "id": "clases",
+  "kind": "Label",
+  "lifecycle": "active",
+  "payload": {
+    "name": "Clases",
+    "colorToken": "blue",
+    "symbol": "graduationcap.fill"
+  }
+}

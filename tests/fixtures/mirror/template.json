@@ -1,0 +1,10 @@
+{
+  "id": "template-001",
+  "kind": "Template",
+  "lifecycle": "active",
+  "payload": {
+    "name": "Clase semanal",
+    "captureText": "tarea Preparar clase #clases",
+    "updatedAt": "2026-10-08T12:00:00.000Z"
+  }
+}

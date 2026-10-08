@@ -1,0 +1,28 @@
+{
+  "id": "event|apple-dst|1792888200",
+  "kind": "CalendarItem",
+  "lifecycle": "active",
+  "payload": {
+    "externalID": "apple-dst",
+    "calendarID": "iCloud-calendar",
+    "calendarTitle": "Mi Agenda",
+    "isEvent": true,
+    "title": "Cambio de hora · Madrid",
+    "notes": "Revisar materiales",
+    "location": null,
+    "url": null,
+    "start": "2026-10-25T00:30:00.000Z",
+    "end": "2026-10-25T02:30:00.000Z",
+    "allDay": false,
+    "dueComponents": null,
+    "startComponents": null,
+    "completed": false,
+    "completionDate": null,
+    "priority": 0,
+    "alarms": [],
+    "recurrence": [],
+    "readOnly": false,
+    "modifiedAt": "2026-10-08T12:00:00.000Z",
+    "metadata": null
+  }
+}

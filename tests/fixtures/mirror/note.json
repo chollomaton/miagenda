@@ -1,0 +1,13 @@
+{
+  "id": "note-001",
+  "kind": "QuickNote",
+  "lifecycle": "active",
+  "payload": {
+    "title": "Ideas para clase",
+    "body": "Una pregunta para empezar.\nMás práctica.",
+    "isPinned": true,
+    "isFavorite": false,
+    "createdAt": "2026-10-07T12:00:00.000Z",
+    "modifiedAt": "2026-10-08T12:00:00.000Z"
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "rootHash": "4c7ad378d1986406432c3d4a1df878d7317d6312650f9bbe58bfa77f9f218581",
+  "bucketHash": "694361093298e0ca8f7b5257eba0d1a092da52a5b5f7811f625040972e609f94",
+  "references": [
+    {
+      "id": "event|apple-dst|1792888200",
+      "kind": "CalendarItem",
+      "hash": "ee8c5ff7c9fd80dea022fbafb1e6e3059b94067a7d191a1760b22a838ef727c0"
+    },
+    {
+      "id": "reminder|apple-001",
+      "kind": "CalendarItem",
+      "hash": "1645180e4c2a4c0147e333f71333e094e8696f0760e01246db01449dbb5494ed"
+    },
+    {
+      "id": "reminder|apple-002",
+      "kind": "CalendarItem",
+      "hash": "f35cff680e13e17a2bd3d273d50d8f2b1a13dd3ab299b7dd026fb1bc90296bf9"
+    },
+    {
+      "id": "reminder|apple-recurring",
+      "kind": "CalendarItem",
+      "hash": "9c256948fa4b1f6448be500eee9e058e7df48143a781ea3cc760bb948385507e"
+    },
+    {
+      "id": "clases",
+      "kind": "Label",
+      "hash": "2617ae12cdf065abedd036554678d2f6dfca923f1ca7e4311e9584cd68c144ef"
+    },
+    {
+      "id": "viajes",
+      "kind": "Label",
+      "hash": "97be5d87ffdcae66a31a64d022cffe6b845a82d77e32ce9893d6d84aece4b041"
+    },
+    {
+      "id": "note-001",
+      "kind": "QuickNote",
+      "hash": "51a9fc42e490c9b6c814de85dc99be3fa00b15bce8bf3c56046800ffdeb641cb"
+    },
+    {
+      "id": "removed-note-001",
+      "kind": "QuickNote",
+      "hash": "14bda2dc943f24b8c877937a66327f4c3d2a5d5ef5ac971958b2bb02f71a16f9"
+    },
+    {
+      "id": "template-001",
+      "kind": "Template",
+      "hash": "bf1e9dabf08d8896f3d563497bfc49a5f3ce919f612b70b3a81235a096136beb"
+    },
+    {
+      "id": "block-001",
+      "kind": "TimeBlock",
+      "hash": "7cc394c8bf1263c99638baa5001cf70cbc37ec1973ae02ba6c5ef052c8a6b11f"
+    }
+  ]
+}
