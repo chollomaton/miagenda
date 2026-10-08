@@ -56,4 +56,12 @@ describe('generation reader integrity and isolation',()=>{
  it('has fresh/stale/offline/empty Spanish labels',()=>{
   expect(freshnessLabel({status:'empty',publishedAt:null,ageMilliseconds:null})).toContain('sin copia');expect(freshnessLabel({status:'fresh',publishedAt:stamp,ageMilliseconds:60000})).toBe('Actualizada hace 1 min');expect(freshnessLabel({status:'stale',publishedAt:stamp,ageMilliseconds:9999999})).toContain('Última actualización');expect(freshnessLabel({status:'offline',publishedAt:stamp,ageMilliseconds:1})).toContain('Sin conexión');
  });
+ it('fails closed for malformed cached payload without crashing boot',async()=>{
+  const {reader,cache,transport}=await setup();await reader.refresh();const record=await cache.load();const malformed=structuredClone(record.current!);Object.assign(malformed,{manifest:null});cache.load=async()=>({...record,current:malformed});
+  const next=new MirrorReader(transport,cache,source.publisherID);await expect(next.boot()).resolves.toBeUndefined();expect(next.entities).toEqual([]);expect(next.issues.length).toBeGreaterThan(0);
+ });
+ it('invalidated authorization immediately hides previously loaded data',async()=>{
+  const {transport}=await setupTransport();let valid=true;const reader=new MirrorReader(transport,new MemoryMirrorCache(),source.publisherID,()=>valid);await reader.refresh();expect(reader.entities).toHaveLength(entities.length);valid=false;expect(reader.entities).toEqual([]);expect(reader.manifest).toBeNull();expect(reader.freshness.status).toBe('empty');expect((await reader.refresh()).issues).toEqual(['STALE_SESSION']);
+ });
+
 });

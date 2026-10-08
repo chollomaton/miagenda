@@ -21,9 +21,9 @@ export class MirrorReader implements AgendaDataSource {
  private listeners=new Set<()=>void>();private tail:Promise<unknown>=Promise.resolve();
  issues:string[]=[];
  constructor(private transport:MirrorReadTransport,private cache:MirrorCache,private publisherID:string,private sessionValid=()=>true,private now=()=>Date.now()){}
- get entities(){return structuredClone(this.current?.entities??[]);}
- get manifest(){return structuredClone(this.current?.manifest??null);}
- get freshness():MirrorFreshness {const publishedAt=this.current?.manifest.publishedAt??null;const ageMilliseconds=publishedAt?Math.max(0,this.now()-Date.parse(publishedAt)):null;return {status:!publishedAt?'empty':this.offline?'offline':ageMilliseconds!>15*60*1000?'stale':'fresh',publishedAt,ageMilliseconds};}
+ get entities(){return structuredClone(!this.detached&&this.sessionValid()?this.current?.entities??[]:[]);}
+ get manifest(){return structuredClone(!this.detached&&this.sessionValid()?this.current?.manifest??null:null);}
+ get freshness():MirrorFreshness {const publishedAt=this.manifest?.publishedAt??null;const ageMilliseconds=publishedAt?Math.max(0,this.now()-Date.parse(publishedAt)):null;return {status:!publishedAt?'empty':this.offline?'offline':ageMilliseconds!>15*60*1000?'stale':'fresh',publishedAt,ageMilliseconds};}
  subscribe=(listener:()=>void)=>{this.listeners.add(listener);return ()=>{this.listeners.delete(listener);};};
  getSnapshot=()=>this.revision;
  private emit(){this.revision++;this.listeners.forEach(fn=>fn());}
@@ -42,7 +42,7 @@ export class MirrorReader implements AgendaDataSource {
   try{
    if(!valid())throw Error('STALE_SESSION');
    const cached=await this.cache.load();const state=await this.transport.readState();validateState(state);
-   if(state.publisherID!==this.publisherID)throw Error('PUBLISHER_REVOKED');
+   if(state.publisherID!==this.publisherID)throw Error('PUBLISHER_REVOKED');if(!valid())throw Error('STALE_SESSION');
    const manifest=await this.transport.readGeneration(state.currentGeneration);validateManifest(manifest);
    if(manifest.generationID!==state.currentGeneration||manifest.rootHash!==state.rootHash||manifest.publishedAt!==state.publishedAt||manifest.source.publisherID!==this.publisherID)throw Error('STATE_MANIFEST_MISMATCH');
    const entities:MirrorEntity[]=[];
@@ -60,7 +60,7 @@ export class MirrorReader implements AgendaDataSource {
     }
    }
    const snapshot={manifest,entities};const result=await validateSnapshot(snapshot);if(!result.valid)throw Error(result.issues.join(','));
-   const latest=await this.transport.readState();validateState(latest);if(canonicalJSON(latest)!==canonicalJSON(state))throw Error('GENERATION_CHANGED');
+   if(!valid())throw Error('STALE_SESSION');const latest=await this.transport.readState();validateState(latest);if(canonicalJSON(latest)!==canonicalJSON(state))throw Error('GENERATION_CHANGED');
    if(!valid())throw Error('STALE_SESSION');
    if(cached.current?.manifest.generationID===manifest.generationID&&canonicalJSON(cached.current)!==canonicalJSON(snapshot))throw Error('GENERATION_NOT_IMMUTABLE');
    if(cached.current?.manifest.generationID!==manifest.generationID)await this.cache.activate(snapshot,cached.revision,valid);

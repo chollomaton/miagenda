@@ -6,7 +6,7 @@ export interface MirrorCache {
 }
 const empty=():MirrorCacheRecord=>({revision:0,current:null,previous:null});
 function next(record:MirrorCacheRecord,snapshot:MirrorSnapshot):MirrorCacheRecord {
- return {revision:record.revision+1,current:structuredClone(snapshot),previous:record.current?.manifest.generationID===snapshot.manifest.generationID?record.previous:record.current};
+ return {revision:record.revision+1,current:structuredClone(snapshot),previous:record.current?.manifest?.generationID===snapshot.manifest.generationID?record.previous:record.current};
 }
 export class MemoryMirrorCache implements MirrorCache {
  private record=empty();
