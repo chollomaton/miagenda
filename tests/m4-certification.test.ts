@@ -20,6 +20,7 @@ it('aligns installation identity, scope, start and shortcuts at GitHub Pages',as
   const png=await readFile('public/'+icon.src);expect(png.readUInt32BE(16)+'x'+png.readUInt32BE(20)).toBe(icon.sizes);
  }
  expect(await readFile('index.html','utf8')).toContain('apple-touch-icon');
+ expect(await readFile('index.html','utf8')).toContain('rel="manifest" href="./manifest.webmanifest?install=1.1.0"');
 });
 it('detects already waiting and newly installed workers, removes listeners',()=>{
  const reg=new EventTarget() as ServiceWorkerRegistration;
