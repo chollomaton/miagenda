@@ -1,5 +1,5 @@
 import {canonicalJSON,sha256} from './canonical';
-import type {MirrorEntity,MirrorFreshness,MirrorSnapshot,MirrorValidationResult} from './contract';
+import type {MirrorEntity,MirrorFreshness,MirrorGenerationManifest,MirrorSnapshot,MirrorValidationResult} from './contract';
 import type {MirrorCache} from './cache';
 import {MirrorOfflineError} from './transport';
 import type {MirrorReadTransport} from './transport';
@@ -8,6 +8,7 @@ export interface AgendaDataSource {
  readonly mode:'mirror-readonly';
  readonly capabilities:Readonly<{read:true;create:false;update:false;delete:false;push:false}>;
  readonly entities:readonly MirrorEntity[];
+ readonly manifest:MirrorGenerationManifest|null;
  readonly freshness:MirrorFreshness;
  subscribe(listener:()=>void):()=>void;
  getSnapshot():number;
@@ -29,11 +30,11 @@ export class MirrorReader implements AgendaDataSource {
  private queue<T>(fn:()=>Promise<T>):Promise<T>{const next=this.tail.then(fn);this.tail=next.catch(()=>{});return next;}
  detach(){this.detached=true;this.epoch++;this.current=null;this.issues=[];this.emit();}
  async boot(){const epoch=this.epoch;return this.queue(async()=>{
-  const record=await this.cache.load();if(this.detached||epoch!==this.epoch||!this.sessionValid())return;
-  for(const snapshot of [record.current,record.previous])if(snapshot&&snapshot.manifest.source.publisherID===this.publisherID){
+  let record;try{record=await this.cache.load();}catch{if(!this.detached&&epoch===this.epoch&&this.sessionValid()){this.issues=['MIRROR_CACHE_READ_FAILED'];this.emit();}return;}if(this.detached||epoch!==this.epoch||!this.sessionValid())return;
+  for(const snapshot of [record.current,record.previous])if(snapshot){
    const result=await validateSnapshot(snapshot);if(this.detached||epoch!==this.epoch||!this.sessionValid())return;
-   if(result.valid){this.current=structuredClone(snapshot);this.offline=true;this.emit();return;}
-   this.issues=result.issues;
+   if(result.valid&&snapshot.manifest.source.publisherID===this.publisherID){this.current=structuredClone(snapshot);this.offline=true;this.emit();return;}
+   this.issues=result.valid?['PUBLISHER_MISMATCH']:result.issues;
   }
   this.emit();
  });}

@@ -1,5 +1,6 @@
 import {civil, utc, safeURL} from '../models/entities';
 import {sha256} from './canonical';
+import {buildContent} from './generation';
 import type {MirrorEntity, MirrorGenerationManifest, MirrorSnapshot, MirrorSourceInfo, MirrorState, MirrorValidationResult} from './contract';
 const kinds = ['CalendarItem','Label','QuickNote','Template','TimeBlock'];
 const hash = /^[0-9a-f]{64}$/;
@@ -72,7 +73,7 @@ export function validateRelations(entities:MirrorEntity[]) {
 }
 export async function validateSnapshot(snapshot:MirrorSnapshot):Promise<MirrorValidationResult> {
  try{validateManifest(snapshot.manifest);validateRelations(snapshot.entities);const m=snapshot.manifest;require(snapshot.entities.length===m.entityCount,'INVALID_COUNT');
-  const {buildContent}=await import('./generation');const content=await buildContent(snapshot.entities,m.source);
+  const content=await buildContent(snapshot.entities,m.source);
   require(content.rootHash===m.rootHash,'ROOT_HASH_MISMATCH');
   require(JSON.stringify(content.bucketReferences)===JSON.stringify(m.buckets),'BUCKET_HASH_MISMATCH');return {valid:true,issues:[]};
  }catch(error){return {valid:false,issues:[error instanceof Error?error.message:'INVALID_SNAPSHOT']};}
