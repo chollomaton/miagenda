@@ -53,3 +53,8 @@ main#main{padding:24px var(--page-padding) 50px;max-width:1600px}.page-header{ma
 .radar-card summary{cursor:pointer;min-height:44px;padding:12px 0;font-size:13px}
 .radar-card h4{margin:16px 0 8px}
 .radar-card .summary-entry{overflow-wrap:anywhere}
+
+/* ItemEditor.swift is 720x780. Browser panels keep natural content height. */
+@media(min-width:700px){
+ .editor{width:min(var(--native-editor-width),calc(100vw - var(--desktop-overlay-padding) - var(--desktop-overlay-padding)));max-height:min(var(--native-editor-height),90dvh)}
+}

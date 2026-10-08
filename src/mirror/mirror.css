@@ -88,3 +88,7 @@
 .mirror-label-purple{--tone:var(--magenta)}
 .mirror-label-pink{--tone:var(--pink)}
 .mirror-label-gray{--tone:var(--muted)}
+
+@media(min-width:700px){
+ .mirror-shell .search-dialog{width:min(var(--native-editor-width),calc(100vw - var(--desktop-overlay-padding) - var(--desktop-overlay-padding)));max-height:min(var(--native-editor-height),90dvh);margin-top:0;align-self:center}
+}

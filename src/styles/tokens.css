@@ -33,12 +33,13 @@
  --sidebar-padding-top:14px;--sidebar-brand-inset:6px;--sidebar-drawer-width:260px;
  --font-brand:19px;--glyph-brand:38px;--font-detail-title:23px;--font-mobile-title:32px;
  --settings-sidebar-width:225px;--settings-padding-x:34px;--settings-padding-y:30px;
+ --native-editor-width:720px;--native-editor-height:780px;--desktop-overlay-padding:25px;
  --settings-max-width:1050px;--settings-card-padding:22px;--font-settings-title:34px;
  --radius-control:9px;--control-height:34px;--control-padding-x:11px;--control-padding-y:7px;
  --control-gap:7px;--row-height:46px;--row-padding-y:7px;--row-padding-x:5px;--glyph-row-small:13px;
  --search-width:325px;--touch-height:44px;--mobile-page-padding:16px;--mobile-bottom-space:105px;
  --mobile-topbar-height:56px;--motion-duration:150ms;
- --calendar-cell-height:120px;--calendar-cell-mobile-height:105px;--calendar-week-height:450px;
+ --calendar-cell-height:122px;--calendar-cell-mobile-height:105px;--calendar-week-height:450px;
  --calendar-week-mobile-width:100px;--calendar-accent-width:3px;--calendar-event-margin:4px;--radius-calendar-event:4px;
  --segmented-inset:2px;--source-control-height:28px;--segmented-shadow:0 1px 3px #0001;
 }
