@@ -1,7 +1,10 @@
 import {readdir,readFile,writeFile} from 'node:fs/promises';
-import {createHash} from 'node:crypto';
 import {generateWorker} from './service-worker.ts';
-const assets=(await readdir('dist/assets')).map(n=>'./assets/'+n);
-const index=await readFile('dist/index.html','utf8');
-const version=createHash('sha256').update(index).update(generateWorker([], '')).digest('hex').slice(0,12);
-await writeFile('dist/service-worker.js',generateWorker(['./','./index.html','./manifest.webmanifest','./icons/agenda.svg','./icons/agenda-192.png','./icons/agenda-512.png',...assets],version));
+import {shellVersion} from './shell-version.ts';
+const assets=(await readdir('dist/assets')).sort().map(n=>'./assets/'+n);
+const manifest=JSON.parse(await readFile('dist/manifest.webmanifest','utf8'));
+const icons=[...new Set([...manifest.icons.map(icon=>'./'+icon.src),'./icons/agenda-native-180.png'])];
+const shell=['./','./index.html','./manifest.webmanifest',...icons,...assets];
+const files=await Promise.all(shell.filter(path=>path!=='./').map(path=>readFile('dist/'+path.slice(2))));
+const version=shellVersion(files,generateWorker([],''));
+await writeFile('dist/service-worker.js',generateWorker(shell,version));
