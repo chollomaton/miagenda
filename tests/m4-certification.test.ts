@@ -5,6 +5,14 @@ it('aligns installation identity, scope, start and shortcuts at GitHub Pages',as
  const m=JSON.parse(await readFile('public/manifest.webmanifest','utf8')),base='https://example.test/miagenda/manifest.webmanifest';
  expect(m.name).toBe('Mi Agenda');expect(m.short_name).toBe('Mi Agenda');expect(m.display).toBe('standalone');
  for(const field of ['id','scope','start_url'])expect(new URL(m[field],base).pathname).toBe('/miagenda/');
+ expect(m.id).toBe('/miagenda/?app-id=1.1.0');
+ expect(m.start_url).toBe('./?pwa=1.1.0');expect(m.scope).toBe('./');
+ const publicManifest='https://chollomaton.github.io/miagenda/manifest.webmanifest';
+ for(const value of [m.id,m.start_url,m.scope,...m.shortcuts.map((s:{url:string})=>s.url)]){
+  const url=new URL(value,publicManifest);
+  expect(url.origin).toBe('https://chollomaton.github.io');expect(url.pathname).toBe('/miagenda/');
+ }
+ expect(new URL(m.id,publicManifest).href).not.toBe(new URL('/miagenda/',publicManifest).href);
  expect(m.shortcuts.map((s:{url:string})=>new URL(s.url,base).search)).toEqual(['?action=new-task','?action=new-reminder','?action=new-event','?action=today']);
  expect(m.icons.map((i:{src:string})=>i.src)).toEqual(['icons/miagenda-192-v2.png','icons/miagenda-512-v2.png','icons/miagenda-maskable-512-v2.png']);
  expect(m.icons.filter((i:{type:string})=>i.type==='image/png').map((i:{sizes:string})=>i.sizes)).toEqual(['192x192','512x512','512x512']);

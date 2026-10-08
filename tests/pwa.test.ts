@@ -32,6 +32,17 @@ it('opens cached shell offline and excludes Firebase, query and private routes',
  let response:Promise<unknown>|undefined;fetchHandler({request:{url:'https://example.test/miagenda/',method:'GET'},respondWith:p=>{response=p}});expect(await response).toEqual(cached);
  for(const url of ['https://firestore.googleapis.com/v1/data','https://example.test/miagenda/?token=secret','https://example.test/miagenda/private','https://example.test/miagenda/api']){response=undefined;fetchHandler({request:{url,method:'GET'},respondWith:p=>{response=p}});expect(response).toBeUndefined()}
 });
+it('opens the versioned installation offline without caching other query URLs',async()=>{
+ let handler!:(e:{request:{url:string;method:string;mode:string};respondWith:(p:Promise<unknown>)=>void})=>void;
+ const cached={body:'existing shell'},lookups:string[]=[];
+ runInNewContext(generateWorker(['./'],'versioned'),{URL,self:{location:{origin:'https://chollomaton.github.io'},registration:{scope:'https://chollomaton.github.io/miagenda/'},addEventListener:(name:string,fn:typeof handler)=>{if(name==='fetch')handler=fn}},caches:{open:async()=>({match:async(url:string)=>{lookups.push(url);return cached}})},fetch:async()=>{throw Error('offline')}});
+ let response:Promise<unknown>|undefined;
+ handler({request:{url:'https://chollomaton.github.io/miagenda/?pwa=1.1.0',method:'GET',mode:'navigate'},respondWith:p=>{response=p}});
+ expect(await response).toEqual(cached);expect(lookups).toEqual(['https://chollomaton.github.io/miagenda/']);
+ for(const [path,mode] of [['?pwa=1.1.0&token=private','navigate'],['?pwa=1.1.0','cors'],['?pwa=old','navigate'],['private?pwa=1.1.0','navigate']]){
+  response=undefined;handler({request:{url:'https://chollomaton.github.io/miagenda/'+path,method:'GET',mode},respondWith:p=>{response=p}});expect(response).toBeUndefined();
+ }
+});
 for(const windows of [1,2])it('activates only explicit request from the sole open client: '+windows,async()=>{
  let message!:(e:{data:{type:string};source:{id:string;postMessage:(data:unknown)=>void};waitUntil:(p:Promise<unknown>)=>void})=>void;
  let activated=0,blocked=0,pending:Promise<unknown>|undefined;

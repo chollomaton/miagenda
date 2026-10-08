@@ -1,8 +1,8 @@
 {
   "name": "Mi Agenda",
   "short_name": "Mi Agenda",
-  "id": "/miagenda/",
-  "start_url": "./",
+  "id": "/miagenda/?app-id=1.1.0",
+  "start_url": "./?pwa=1.1.0",
   "scope": "./",
   "display": "standalone",
   "theme_color": "#285dd7",

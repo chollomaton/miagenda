@@ -1,0 +1,17 @@
+# Identidad de instalación iOS 1.1.0
+
+La RC cambia `id` de `/miagenda/` a `/miagenda/?app-id=1.1.0` y `start_url` de `./` a `./?pwa=1.1.0`. Son valores estables para esta versión, con origen `https://chollomaton.github.io` y scope `/miagenda/` intactos. Los cuatro shortcuts y los filenames reales nuevos de los iconos permanecen intactos. El HTML conserva un único apple-touch-icon PNG RGB de 180×180; precomposed no aporta una solución documentada a la caché de identidad.
+
+El worker reconoce exclusivamente la navegación al inicio con `?pwa=1.1.0` y sirve el shell raíz cacheado, permitiendo abrir la nueva instalación offline después de instalar/activar su worker. No amplía la caché a otras queries ni rutas privadas.
+
+Hipótesis: iOS reutiliza metadatos de instalación/Web Clip antiguos. El icono visible dentro de la app no prueba qué icono eligió A2HS. El nuevo manifest ID declara otra identidad y la URL de inicio evita conservar la misma URL de lanzamiento; no existe garantía documentada de invalidación de la caché de iconos de iOS. La confirmación requiere probar el dispositivo.
+
+WebKit documenta manifest ID desde iOS 16.4 y su combinación con el nombre de la instalación: https://webkit.org/blog/13878/web-push-for-web-apps-on-ios-and-ipados/ . Esa documentación también describe la prioridad del apple-touch-icon en iOS. Las mejoras de prioridad maskable de Safari 17.2 se describen para macOS, no deben extrapolarse a iOS: https://webkit.org/blog/14787/webkit-features-in-safari-17-2/ . Safari 26 mantiene A2HS y permite abrir cualquier sitio como app: https://webkit.org/blog/17333/webkit-features-in-safari-26-0/ . Semántica estándar de identidad: https://www.w3.org/TR/appmanifest/ .
+
+## Datos y reinstalación
+
+Este cambio no borra, migra ni renombra IndexedDB (`miagenda`), claves de sesión, configuración Firebase ni datos remotos. En el mismo contenedor de almacenamiento, cambiar sólo la query no cambia el origen de IndexedDB. Sin embargo, una nueva instalación iOS puede tener su propio contenedor: mismo origen NO garantiza compartir IndexedDB/localStorage ni sesión con Safari o con la instalación anterior. WebKit confirma que desde iOS 17.2 se copian cookies al instalar, pero no otros almacenes locales: https://webkit.org/blog/14787/webkit-features-in-safari-17-2/ . Los datos Firebase remotos permanecen; puede ser necesario iniciar sesión de nuevo. No se promete recuperar datos locales tras eliminar la PWA.
+
+Antes de eliminar la instalación vieja: exportar una copia de seguridad y comprobar que está guardada, o verificar que los datos están sincronizados en Firebase. Después: eliminar PWA vieja, cerrar Safari desde el selector, abrir `https://chollomaton.github.io/miagenda/?pwa=1.1.0`, Compartir → Añadir a pantalla de inicio (activar Abrir como app si aparece), comprobar el icono en la hoja y en pantalla de inicio, abrir y verificar datos/sesión; importar la copia si hace falta.
+
+Si sigue el icono antiguo: recoger versión exacta de iOS y captura de la hoja A2HS; comprobar HTML/manifest reales en el dispositivo con Web Inspector y estado del worker. Siguiente fallback propuesto, no aplicado: una página real de instalación con pathname nuevo dentro de `/miagenda/`, mismo manifest e icono, y nombre temporal distinto al instalar (iOS combina nombre e ID). No cambiar dominio ni borrar datos de Safari. Este fallback tampoco garantiza eliminar metadata interna de iOS.
