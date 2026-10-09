@@ -132,3 +132,69 @@
 .mirror-time-block small{font-size:10px;color:var(--text-secondary)}
 .mirror-time-block strong{max-width:100%;overflow:hidden;text-overflow:ellipsis}
 @media(max-width:699px){.mirror-day-select{min-width:var(--touch-height);min-height:var(--touch-height)}.mirror-time-block{min-height:var(--touch-height)}}
+
+/* Measured against the isolated synthetic macOS window, 9 October 2026. */
+@media(min-width:1100px){
+ .mirror-shell .sidebar{padding-top:64px}
+ #mirror-main{padding-top:calc(var(--dashboard-padding-y) + 9px)}
+ .mirror-shell .mirror-search{border-radius:20px}
+}
+.mirror-card .summary-day .mirror-row{min-height:42px;padding:6px 8px;margin:5px 0;border:0;border-left:3px solid var(--pink);border-radius:3px}
+.mirror-card .summary-day .mirror-row-icon,.mirror-card .summary-day .mirror-row>.icon:last-child{display:none}
+.mirror-card .summary-day .mirror-row strong{font-size:11px;font-weight:600}
+.mirror-card .summary-day .mirror-row small{font-size:10px}
+.mirror-card .summary-day .mirror-empty{padding:4px 0;font-size:11px}
+.mirror-settings section[aria-label="Vincular Mac"]{margin-top:24px;padding-top:16px;border-top:1px solid var(--border-subtle);display:grid;gap:12px}
+.mirror-settings section[aria-label="Vincular Mac"] button{justify-self:start}
+.mirror-settings section[aria-label="Vincular Mac"] input{max-width:100%;min-width:0}
+@media(min-width:700px){
+ .mirror-shell .search-dialog:has(.mirror-detail[data-kind=QuickNote]){width:min(660px,calc(100vw - 50px));min-height:min(620px,90dvh)}
+ .mirror-detail[data-kind=QuickNote]{display:flex;flex-direction:column;min-height:min(572px,calc(90dvh - 48px))}
+ .mirror-detail[data-kind=QuickNote] .mirror-note-body{flex:1;margin-top:24px}
+ .mirror-detail[data-kind=QuickNote] footer{margin-top:auto}
+ #mirror-main:has(>.mirror-settings) .page-header h2{font-size:var(--font-settings-title)}
+}
+.mirror-settings-nav-heading{display:flex;align-items:center;gap:10px;margin-bottom:16px;padding:0 12px}
+.mirror-settings-nav-heading .section-glyph{width:44px;height:44px;color:var(--indigo);background:color-mix(in srgb,var(--indigo) 9%,transparent)}
+.mirror-settings-nav-heading strong,.mirror-settings-nav-heading small{display:block;font-size:13px}
+.mirror-settings-nav-heading small{font-size:10px;margin-top:4px}
+.mirror-settings-detail{min-width:0}
+.mirror-settings-pane-heading{display:flex;align-items:center;gap:14px;margin:10px 0 24px}
+.mirror-settings-pane-heading h2{font-size:var(--font-settings-title);margin:0 0 4px}
+.mirror-settings-pane-heading p{font-size:13px;margin:0}
+.mirror-settings-pane-heading .section-glyph{color:var(--indigo);background:color-mix(in srgb,var(--indigo) 9%,transparent)}
+.mirror-settings-detail>.premium-surface{padding:var(--settings-card-padding)}
+@media(min-width:1100px){
+ #mirror-main:has(>.mirror-settings)>.mirror-meta,#mirror-main:has(>.mirror-settings)>.page-header{display:none}
+ .mirror-settings{max-width:none;margin-left:calc(-1 * var(--page-padding));grid-template-columns:225px minmax(0,1fr);gap:34px}
+ .mirror-settings>nav button{min-height:50px;font-size:13px;border-radius:9px}
+ .mirror-settings>nav button[aria-current=page]{background:color-mix(in srgb,var(--indigo) 8%,transparent)}
+}
+@media(max-width:699px){.mirror-settings-nav-heading{width:100%;padding:0}.mirror-settings-pane-heading{margin:6px 0 16px}.mirror-settings-pane-heading h2{font-size:28px}.mirror-settings-detail>.premium-surface{padding:var(--card-padding)}}
+
+.mirror-calendar-heading{display:flex;align-items:center;gap:14px;min-width:190px}
+.mirror-calendar-heading h2{font-size:var(--font-dashboard-title);margin:0;text-transform:lowercase}
+.mirror-calendar-heading small{color:var(--text-secondary)}
+.mirror-calendar-heading .section-glyph{background:color-mix(in srgb,var(--green) 9%,transparent);color:var(--green)}
+.mirror-calendar-layout{min-width:0}
+.mirror-calendar-day-detail{padding:18px;min-width:0;align-self:stretch}
+.mirror-calendar-day-detail h3{margin:3px 0 18px;font-size:17px}
+.mirror-calendar-day-detail header small{color:var(--text-secondary)}
+.mirror-calendar-day-detail .mirror-row{background:color-mix(in srgb,var(--blue) 5%,var(--surface-card));border:0;border-radius:10px;margin-bottom:6px}
+.mirror-calendar.mode-mes .mirror-day.selected{background:color-mix(in srgb,var(--blue) 7%,var(--surface-card));border-color:color-mix(in srgb,var(--blue) 30%,transparent)}
+@media(min-width:1100px){
+ #mirror-main:has(>.mirror-calendar-view)>.page-header{display:none}
+ .mirror-calendar-layout.with-day-detail{display:grid;grid-template-columns:minmax(0,1fr) 286px;gap:14px}
+ .mirror-calendar.mode-mes .mirror-day{min-height:112px;padding:10px}
+ .mirror-calendar.mode-mes .mirror-day.outside-month{visibility:hidden}
+ .mirror-calendar-event{padding:3px 5px}
+ .mirror-calendar-event strong{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ .mirror-calendar-toolbar{flex-wrap:nowrap;margin:12px 0}
+ .mirror-calendar-toolbar .segmented{flex-shrink:0}
+}
+@media(max-width:1099px){.mirror-calendar-day-detail{margin-top:14px}.mirror-calendar-heading h2{font-size:28px}}
+
+.mirror-shell .sidebar nav button[aria-current=page]{background:var(--blue);color:white}
+.mirror-shell .sidebar nav button[aria-current=page] .icon{color:white}
+.mirror-shell .sidebar nav button[aria-current=page] .badge{background:#ffffff26;color:white}
+.mirror-calendar-event.is-reminder{border-color:var(--blue);background:color-mix(in srgb,var(--blue) 10%,var(--surface-card))}

@@ -31,3 +31,10 @@ it('Lite network failure while browser is online marks the existing validated co
  const runtime=new MirrorRuntime(config);await runtime.start();await vi.waitFor(()=>expect(runtime.source.entities.length).toBeGreaterThan(0));const before=runtime.source.entities;
  sdk.read.mockRejectedValue({code:'unknown',message:'HTTP error has no status'});await expect(runtime.source.refresh()).rejects.toThrow('MIRROR_OFFLINE');expect(runtime.source.freshness.status).toBe('offline');expect(runtime.source.entities).toEqual(before);runtime.dispose();
 });
+it('manual refresh receives the first publication when the signed-in web booted empty',async()=>{
+ const {transport}=await setupTransport();sdk.auth.currentUser={uid:'first-publication-owner'};
+ sdk.read.mockResolvedValue({exists:()=>false});const runtime=new MirrorRuntime(config);await runtime.start();
+ await vi.waitFor(()=>expect(sdk.read).toHaveBeenCalled());expect(runtime.source.manifest).toBeNull();
+ sdk.read.mockImplementation(async(path:string)=>{const parts=path.split('/');const value=parts.length===4?await transport.readState():parts[4]==='generations'?await transport.readGeneration(parts[5]):parts[4]==='buckets'?await transport.readBucket(parts[5]):await transport.readObject(parts[5]);return {exists:()=>value!==null,data:()=>value};});
+ expect((await runtime.source.refresh()).valid).toBe(true);expect(runtime.source.entities.length).toBeGreaterThan(0);runtime.dispose();
+});
