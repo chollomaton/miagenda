@@ -208,3 +208,7 @@
  .mirror-calendar.mode-mes .mirror-calendar-event small{display:none}
  .mirror-calendar-day-detail{align-self:start;min-height:500px}
 }
+
+.mirror-shell .workspace.tone-Task .mirror-list-surface{padding:0;border:0;background:transparent;box-shadow:none}
+.mirror-shell .workspace.tone-Task .mirror-list-surface .mirror-row{border:1px solid var(--border-subtle);border-radius:14px;min-height:56px;padding:10px 12px;margin-bottom:6px}
+@media(min-width:700px){.mirror-shell .workspace.tone-Task .page-header h2{font-size:28px}}
