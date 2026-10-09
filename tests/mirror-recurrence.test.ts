@@ -43,3 +43,17 @@ it('projects only reminder series with an explicitly known origin; legacy/native
 it('applies set positions to the entire period before trimming the series origin',()=>{
  expect(projectReminder(anchor,rule({frequency:2,weekdays:[2],weekNumbers:[0],positions:[1]}),'2026-03-27','2026-05-01').dates).toEqual(['2026-04-06']);
 });
+it('keeps moved and ordinary occurrences distinct without resurrecting the original slot',()=>{
+ const moved=structuredClone(entities.find(e=>e.kind==='CalendarItem'&&e.lifecycle==='active'&&e.payload.isEvent)!);
+ if(moved.kind!=='CalendarItem'||moved.lifecycle!=='active')throw Error();
+ moved.id='series|moved';
+ Object.assign(moved.payload,{externalID:'same-series',start:'2026-03-30T10:00:00.000Z',end:'2026-03-30T11:00:00.000Z',allDay:false,recurrence:[rule()],recurrenceMode:'materialized',occurrence:{originalStart:'2026-03-29T07:00:00.000Z',detached:true}});
+ const ordinary=structuredClone(moved);ordinary.id='series|ordinary';
+ Object.assign(ordinary.payload,{start:'2026-03-30T07:00:00.000Z',end:'2026-03-30T08:00:00.000Z',occurrence:{originalStart:'2026-03-30T07:00:00.000Z',detached:false}});
+ const snapshot=[moved,ordinary];snapshot.forEach(e=>validateEntity(e));
+ expect(snapshot.filter(e=>onDay(e,'2026-03-29'))).toEqual([]);
+ expect(snapshot.filter(e=>onDay(e,'2026-03-30')).map(e=>e.id)).toEqual(['series|moved','series|ordinary']);
+ expect(snapshot.filter(e=>onDay(e,'2026-03-31'))).toEqual([]);
+ expect(moved.payload.occurrence?.originalStart).toBe('2026-03-29T07:00:00.000Z');
+ expect(moved.payload.start).toBe('2026-03-30T10:00:00.000Z');
+});
