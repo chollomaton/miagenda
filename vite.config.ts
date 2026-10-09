@@ -16,5 +16,6 @@ export default defineConfig(({command}) => ({
   }],
   html: command==='serve'?{cspNonce:localNoncePlaceholder}:undefined,
   base: '/miagenda/',
-  test: { maxWorkers:4, include: ['tests/**/*.test.{ts,tsx}'], environment: 'jsdom', setupFiles: ['./tests/setup.ts'], clearMocks: true },
+  // One worker bounds jsdom memory and avoids timing-dependent UI failures on a shared Mac.
+  test: { maxWorkers:1, include: ['tests/**/*.test.{ts,tsx}'], environment: 'jsdom', setupFiles: ['./tests/setup.ts'], clearMocks: true },
 }));
