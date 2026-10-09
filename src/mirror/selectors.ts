@@ -1,3 +1,4 @@
+import {projectReminder} from './recurrence';
 import type {MirrorEntity} from './contract';
 import {addDays,dateInZone} from '../utils/calendar';
 export type ActiveMirrorEntity=Extract<MirrorEntity,{lifecycle:'active'}>;
@@ -16,7 +17,7 @@ export function matches(entity:ActiveMirrorEntity,query:string){
 export function onDay(entity:ActiveMirrorEntity,day:string,zone='Europe/Madrid'):boolean {
  if(entity.kind==='TimeBlock')return spans(entity.payload.start,entity.payload.end,day,zone);
  if(entity.kind!=='CalendarItem')return false;
- const p=entity.payload;if(!p.isEvent)return !p.completed&&p.dueComponents?.date===day;
+ const p=entity.payload;if(!p.isEvent){if(p.completed||!p.dueComponents)return false;if(!p.recurrence.length||p.recurrenceMode!=='series')return p.dueComponents.date===day;return p.recurrence.some(r=>projectReminder(p.dueComponents!,r,day,day).dates.includes(day));}
  if(p.allDay&&p.startComponents&&p.end){const civilZone=p.startComponents.timeZone??zone;return p.startComponents.date<=day&&dateInZone(new Date(Date.parse(p.end)-1).toISOString(),civilZone)>=day;}
  return !!p.start&&!!p.end&&spans(p.start,p.end,day,zone);
 }

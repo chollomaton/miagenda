@@ -3,6 +3,7 @@ export const MIRROR_SCHEMA_VERSION = 1 as const;
 export type MirrorKind = 'CalendarItem' | 'Label' | 'QuickNote' | 'Template' | 'TimeBlock';
 export interface MirrorCivilTime { date: string; time: string | null; timeZone: string | null }
 export interface MirrorRecurrence {
+ firstWeekday?: number;
  frequency: number; interval: number; endDate: string | null; occurrenceCount: number;
  weekdays: number[]; weekNumbers: number[]; monthDays: number[] | null;
  yearDays: number[] | null; yearWeeks: number[] | null; months: number[] | null; positions: number[] | null;
@@ -14,6 +15,8 @@ export interface MirrorMetadata {
  estimatedDurationMinutes: number | null;
 }
 export interface MirrorCalendarItem {
+ recurrenceMode?: 'materialized' | 'series';
+ occurrence?: {originalStart: string | null; detached: boolean};
  externalID: string | null; calendarID: string; calendarTitle: string; isEvent: boolean;
  title: string; notes: string; location: string | null; url: string | null;
  start: string | null; end: string | null; allDay: boolean;

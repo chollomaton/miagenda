@@ -16,7 +16,8 @@ function integer(value: unknown,min:number,max:number) {require(Number.isSafeInt
 function list(value: unknown): unknown[] {require(Array.isArray(value) && value.length<=100000,'INVALID_ARRAY');return value;}
 function civilTime(value:unknown) {if(value===null)return;const t=keys(value,['date','time','timeZone']); require(civil(t.date),'INVALID_CIVIL_DATE');require(t.time===null||typeof t.time==='string'&&/^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/.test(t.time),'INVALID_CIVIL_TIME');if(t.timeZone!==null){text(t.timeZone,100);new Intl.DateTimeFormat('es',{timeZone:t.timeZone});}}
 function recurrence(value: unknown) {
- const r=keys(value,['frequency','interval','endDate','occurrenceCount','weekdays','weekNumbers','monthDays','yearDays','yearWeeks','months','positions']);
+ const r=keys(value,['frequency','interval','endDate','occurrenceCount','weekdays','weekNumbers','monthDays','yearDays','yearWeeks','months','positions',...('firstWeekday' in record(value)?['firstWeekday']:[])]);
+ if(r.firstWeekday!==undefined)integer(r.firstWeekday,0,7);
  integer(r.frequency,0,3);integer(r.interval,1,1000);optionalDate(r.endDate);integer(r.occurrenceCount,0,1000000);
  const weekdays=list(r.weekdays), weeks=list(r.weekNumbers);require(weekdays.length===weeks.length,'INVALID_WEEK_PAIRS');weekdays.forEach(v=>integer(v,1,7));weeks.forEach(v=>integer(v,-53,53));
  for(const [key,max] of [['monthDays',31],['yearDays',366],['yearWeeks',53],['months',12],['positions',366]] as const)if(r[key]!==null)list(r[key]).forEach(v=>{integer(v,key==='months'?1:-max,max);require(v!==0,'INVALID_RECURRENCE');});
@@ -39,7 +40,9 @@ export function validateEntity(value: unknown): asserts value is MirrorEntity {
  case 'Template':keys(p,['name','captureText','updatedAt']);text(p.name,500);text(p.captureText);date(p.updatedAt);break;
  case 'TimeBlock': keys(p,['taskID','title','start','end','updatedAt']);id(p.taskID);text(p.title,500);date(p.start);date(p.end);date(p.updatedAt);require((p.end as string)>(p.start as string),'INVALID_RANGE');break;
  case 'CalendarItem':
-  keys(p,['externalID','calendarID','calendarTitle','isEvent','title','notes','location','url','start','end','allDay','dueComponents','startComponents','completed','completionDate','priority','alarms','recurrence','readOnly','modifiedAt','metadata']);
+  keys(p,['externalID','calendarID','calendarTitle','isEvent','title','notes','location','url','start','end','allDay','dueComponents','startComponents','completed','completionDate','priority','alarms','recurrence','readOnly','modifiedAt','metadata',...('occurrence' in p?['occurrence']:[]),...('recurrenceMode' in p?['recurrenceMode']:[])]);
+  if('recurrenceMode' in p)require(p.recurrenceMode==='materialized'||p.recurrenceMode==='series'&&!p.isEvent,'INVALID_RECURRENCE_MODE');
+  if('occurrence' in p){const o=keys(p.occurrence,['originalStart','detached']);optionalDate(o.originalStart);bool(o.detached);require(p.isEvent===true&&(!o.detached||o.originalStart!==null),'INVALID_OCCURRENCE');}
   if(p.externalID!==null)id(p.externalID);id(p.calendarID);text(p.calendarTitle,500);text(p.title,500);text(p.notes);if(p.location!==null)text(p.location,2000);
   if(p.url!==null){text(p.url,4000);require(!p.url||!!safeURL(p.url)||/^miagenda:\/\/(timeblock|task)\/[a-zA-Z0-9-]+$/.test(p.url),'INVALID_URL');}
   for(const key of ['isEvent','allDay','completed','readOnly'])bool(p[key]);
