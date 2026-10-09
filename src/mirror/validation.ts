@@ -1,5 +1,5 @@
 import {civil, utc, safeURL} from '../models/entities';
-import {sha256} from './canonical';
+import {canonicalJSON,sha256} from './canonical';
 import {buildContent} from './generation';
 import type {MirrorEntity, MirrorGenerationManifest, MirrorSnapshot, MirrorSourceInfo, MirrorState, MirrorValidationResult} from './contract';
 const kinds = ['CalendarItem','Label','QuickNote','Template','TimeBlock'];
@@ -41,12 +41,12 @@ export function validateEntity(value: unknown): asserts value is MirrorEntity {
  case 'CalendarItem':
   keys(p,['externalID','calendarID','calendarTitle','isEvent','title','notes','location','url','start','end','allDay','dueComponents','startComponents','completed','completionDate','priority','alarms','recurrence','readOnly','modifiedAt','metadata']);
   if(p.externalID!==null)id(p.externalID);id(p.calendarID);text(p.calendarTitle,500);text(p.title,500);text(p.notes);if(p.location!==null)text(p.location,2000);
-  if(p.url!==null){text(p.url,4000);require(!p.url||!!safeURL(p.url)||/^miagenda:\/\/timeblock\/[a-zA-Z0-9-]+$/.test(p.url),'INVALID_URL');}
+  if(p.url!==null){text(p.url,4000);require(!p.url||!!safeURL(p.url)||/^miagenda:\/\/(timeblock|task)\/[a-zA-Z0-9-]+$/.test(p.url),'INVALID_URL');}
   for(const key of ['isEvent','allDay','completed','readOnly'])bool(p[key]);
   for(const key of ['start','end','completionDate'])optionalDate(p[key]);date(p.modifiedAt);integer(p.priority,0,9);
   if(p.isEvent)require(p.start!==null&&p.end!==null&&(p.end as string)>(p.start as string),'INVALID_RANGE');
   civilTime(p.dueComponents);civilTime(p.startComponents);metadata(p.metadata);
-  list(p.alarms).forEach(v=>{const a=keys(v,['absolute','relative']);optionalDate(a.absolute);require(typeof a.relative==='number'&&Number.isFinite(a.relative),'INVALID_ALARM');});
+  list(p.alarms).forEach(v=>{const a=keys(v,['absolute','relative']);optionalDate(a.absolute);require(Number.isSafeInteger(a.relative),'INVALID_ALARM');});
   list(p.recurrence).forEach(recurrence);break;
  }
 }
@@ -75,7 +75,7 @@ export async function validateSnapshot(snapshot:MirrorSnapshot):Promise<MirrorVa
  try{validateManifest(snapshot.manifest);validateRelations(snapshot.entities);const m=snapshot.manifest;require(snapshot.entities.length===m.entityCount,'INVALID_COUNT');
   const content=await buildContent(snapshot.entities,m.source);
   require(content.rootHash===m.rootHash,'ROOT_HASH_MISMATCH');
-  require(JSON.stringify(content.bucketReferences)===JSON.stringify(m.buckets),'BUCKET_HASH_MISMATCH');return {valid:true,issues:[]};
+  require(canonicalJSON(content.bucketReferences)===canonicalJSON(m.buckets),'BUCKET_HASH_MISMATCH');return {valid:true,issues:[]};
  }catch(error){return {valid:false,issues:[error instanceof Error?error.message:'INVALID_SNAPSHOT']};}
 }
 export {sha256};

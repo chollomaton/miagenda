@@ -17,6 +17,7 @@ export function onDay(entity:ActiveMirrorEntity,day:string,zone='Europe/Madrid')
  if(entity.kind==='TimeBlock')return spans(entity.payload.start,entity.payload.end,day,zone);
  if(entity.kind!=='CalendarItem')return false;
  const p=entity.payload;if(!p.isEvent)return !p.completed&&p.dueComponents?.date===day;
+ if(p.allDay&&p.startComponents&&p.end){const civilZone=p.startComponents.timeZone??zone;return p.startComponents.date<=day&&dateInZone(new Date(Date.parse(p.end)-1).toISOString(),civilZone)>=day;}
  return !!p.start&&!!p.end&&spans(p.start,p.end,day,zone);
 }
 function spans(start:string,end:string,day:string,zone:string){return dateInZone(start,zone)<=day&&dateInZone(new Date(Date.parse(end)-1).toISOString(),zone)>=day;}
