@@ -1,0 +1,39 @@
+rules_version = '2';
+service cloud.firestore {
+ match /databases/{database}/documents {
+  function owner(uid) { return request.auth != null && request.auth.uid == uid; }
+  function grant(uid) { return get(/databases/$(database)/documents/users/$(uid)/mirrorControl/grant).data; }
+  function publisher(uid) {
+   let g = grant(uid);
+   return request.auth != null && request.auth.uid != uid && request.auth.uid == g.publisherUID
+    && g.ownerUID == uid && g.revokedAt == null && g.leaseExpiresAt > request.time;
+  }
+  // Preserve the editable 1.1 owner boundary. No publisher inheritance.
+  match /users/{uid}/entities/{entity} { allow read, write: if owner(uid); }
+  match /users/{uid}/mirrorControl/grant {
+   allow read: if owner(uid) || (request.auth != null && request.auth.uid == resource.data.publisherUID);
+   // Pairing, replacement and renewal require a validated single-use challenge.
+   // The local authority performs those transactions; clients cannot self-grant.
+   allow update: if owner(uid)
+    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['revokedAt'])
+    && request.resource.data.revokedAt == request.time;
+  }
+  match /mirrorChallenges/{hash} {
+   allow read: if request.auth != null && (request.auth.uid == resource.data.ownerUID || request.auth.uid == resource.data.publisherUID);
+   // Creation/claim/confirmation belongs to the authenticated local authority.
+   allow write: if false;
+  }
+  match /users/{uid}/icloudMirror/state {
+   allow read: if owner(uid);
+   // Only the validator authority can commit a checked generation and CAS pointer.
+   allow write: if false;
+   match /{collection}/{id} {
+    allow read: if owner(uid);
+    allow create: if collection in ['objects','buckets','generations'] && publisher(uid)
+     && request.resource.data.keys().hasOnly(['publisherID','payload'])
+     && request.resource.data.publisherID == grant(uid).publisherID;
+    allow update, delete: if false;
+   }
+  }
+ }
+}

@@ -14,3 +14,6 @@ coverage/
 backups/
 exports/
 private-data/
+
+work/
+.firebase/
