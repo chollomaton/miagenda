@@ -1,0 +1,94 @@
+rules_version = '2';
+service cloud.firestore {
+ match /databases/{database}/documents {
+  function signedIn() { return request.auth != null; }
+  function owner(uid) { return signedIn() && request.auth.uid == uid; }
+  function grantPath(uid) { return /databases/$(database)/documents/users/$(uid)/mirrorControl/grant; }
+  function challengePath(id) { return /databases/$(database)/documents/mirrorPairing/$(id); }
+  function grant(uid) { return get(grantPath(uid)).data; }
+  function publisher(uid) {
+   let g = grant(uid);
+   return signedIn() && request.auth.uid != uid && request.auth.uid == g.publisherUID
+    && g.ownerUID == uid && g.revokedAt == null && g.leaseExpiresAt > request.time;
+  }
+  function boundedLease(g) { return g.leaseExpiresAt > request.time && g.leaseExpiresAt <= request.time + duration.value(1, 'h'); }
+  function paired(uid,g) {
+   let c = get(challengePath(g.challengeID)).data;
+   let after = getAfter(challengePath(g.challengeID)).data;
+   return owner(uid) && g.keys().hasOnly(['ownerUID','publisherUID','publisherID','leaseExpiresAt','revokedAt','challengeID'])
+    && g.ownerUID == uid && g.publisherUID != uid && g.publisherUID == c.publisherUID
+    && g.publisherID == g.challengeID && g.revokedAt == null && boundedLease(g)
+    && c.consumedAt == null && c.ownerUID == null && c.expiresAt > request.time
+    && after.consumedAt == request.time && after.ownerUID == uid;
+  }
+  // Exact 1.1 policy, including its delete prohibition.
+  match /users/{uid}/entities/{entityId} {
+   allow read, create, update: if owner(uid);
+   allow delete: if false;
+  }
+  match /mirrorPairing/{id} {
+   allow get: if signedIn() && (request.auth.uid == resource.data.publisherUID
+    || resource.data.consumedAt == null && resource.data.expiresAt > request.time
+    || request.auth.uid == resource.data.ownerUID);
+   allow list, delete: if false;
+   allow create: if signedIn() && request.auth.token.firebase.sign_in_provider == 'anonymous'
+    && id.matches('^[0-9a-f]{64}$')
+    && request.resource.data.keys().hasOnly(['publisherUID','createdAt','expiresAt','consumedAt','ownerUID'])
+    && request.resource.data.publisherUID == request.auth.uid && request.resource.data.createdAt == request.time
+    && request.resource.data.expiresAt > request.time && request.resource.data.expiresAt <= request.time + duration.value(5, 'm')
+    && request.resource.data.consumedAt == null && request.resource.data.ownerUID == null;
+   allow update: if signedIn() && request.auth.token.firebase.sign_in_provider == 'google.com'
+    && request.auth.uid != resource.data.publisherUID && resource.data.consumedAt == null
+    && resource.data.expiresAt > request.time
+    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['consumedAt','ownerUID'])
+    && request.resource.data.consumedAt == request.time && request.resource.data.ownerUID == request.auth.uid
+    && getAfter(grantPath(request.auth.uid)).data.challengeID == id
+    && getAfter(grantPath(request.auth.uid)).data.publisherUID == resource.data.publisherUID;
+  }
+  match /users/{uid}/mirrorControl/grant {
+   allow get: if owner(uid) || signedIn() && request.auth.uid == resource.data.publisherUID;
+   allow list, delete: if false;
+   allow create: if paired(uid,request.resource.data);
+   allow update: if paired(uid,request.resource.data)
+    || (owner(uid) || signedIn() && request.auth.uid != uid && request.auth.uid == resource.data.publisherUID)
+     && (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['revokedAt'])
+       && resource.data.revokedAt == null && request.resource.data.revokedAt == request.time
+      || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['leaseExpiresAt'])
+       && resource.data.revokedAt == null && resource.data.leaseExpiresAt > request.time && boundedLease(request.resource.data));
+  }
+  match /users/{uid}/mirrorActivations/{generation} {
+   allow get: if owner(uid) || publisher(uid);
+   allow list, update, delete: if false;
+   allow create: if publisher(uid)
+    && request.resource.data.keys().hasOnly(['publisherID','activatedAt'])
+    && request.resource.data.publisherID == grant(uid).publisherID && request.resource.data.activatedAt == request.time
+    && getAfter(/databases/$(database)/documents/users/$(uid)/icloudMirror/state).data.currentGeneration == generation;
+  }
+  match /users/{uid}/icloudMirror/state {
+   allow get: if owner(uid) || publisher(uid);
+   allow list, delete: if false;
+   function validState() {
+    let s = request.resource.data;
+    let m = get(/databases/$(database)/documents/users/$(uid)/icloudMirror/state/generations/$(s.currentGeneration)).data;
+    return publisher(uid) && s.keys().hasOnly(['mirrorSchemaVersion','currentGeneration','previousGeneration','publisherID','publishedAt','rootHash'])
+     && s.mirrorSchemaVersion == 1 && s.publisherID == grant(uid).publisherID
+     && m.publisherID == s.publisherID && m.payload.source.publisherID == s.publisherID
+     && !exists(/databases/$(database)/documents/users/$(uid)/mirrorActivations/$(s.currentGeneration))
+     && getAfter(/databases/$(database)/documents/users/$(uid)/mirrorActivations/$(s.currentGeneration)).data.publisherID == s.publisherID
+     && getAfter(/databases/$(database)/documents/users/$(uid)/mirrorActivations/$(s.currentGeneration)).data.activatedAt == request.time
+     && m.payload.generationID == s.currentGeneration && m.payload.rootHash == s.rootHash && m.payload.publishedAt == s.publishedAt;
+   }
+   allow create: if validState() && request.resource.data.previousGeneration == null;
+   allow update: if validState() && request.resource.data.previousGeneration == resource.data.currentGeneration
+    && request.resource.data.currentGeneration != resource.data.currentGeneration;
+   match /{collection}/{id} {
+    allow get: if collection in ['objects','buckets','generations'] && (owner(uid) || publisher(uid));
+    allow list: if false;
+    allow create: if collection in ['objects','buckets','generations'] && publisher(uid)
+     && request.resource.data.keys().hasOnly(['publisherID','payload'])
+     && request.resource.data.publisherID == grant(uid).publisherID;
+    allow update, delete: if false;
+   }
+  }
+ }
+}
