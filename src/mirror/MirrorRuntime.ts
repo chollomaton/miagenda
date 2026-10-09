@@ -1,13 +1,13 @@
 import {getApp,initializeApp} from 'firebase/app';
 import {browserLocalPersistence,getAuth,GoogleAuthProvider,onAuthStateChanged,setPersistence,signInWithPopup} from 'firebase/auth';
-import {doc,getDoc,getFirestore} from 'firebase/firestore';
+import {getFirestore} from 'firebase/firestore/lite';
+import type {FirebaseApp} from 'firebase/app';
+import {firestoreMirrorTransport} from './firestoreTransport';
 import type {FirebaseConfig} from '../cloud/FirebaseConfig';
 import {MemoryMirrorCache} from './cache';
 import {MirrorReader} from './reader';
 import {MemoryMirrorTransport} from './transport';
-import type {MirrorReadTransport} from './transport';
 import {LocalMirrorSession} from './localSession';
-import {MirrorOfflineError} from './transport';
 export class MirrorRuntime {
  state:'checking'|'signedOut'|'signedIn'|'unavailable'='checking';
  source=new MirrorReader(new MemoryMirrorTransport(null),new MemoryMirrorCache(),'unconnected');
@@ -16,12 +16,14 @@ export class MirrorRuntime {
  private local:LocalMirrorSession|null=null;private online:(()=>void)|null=null;private timer:number|null=null;private auth:ReturnType<typeof getAuth>|null=null;
  subscribe=(fn:()=>void)=>{this.listeners.add(fn);return ()=>{this.listeners.delete(fn);};};
  private emit(){this.revision++;this.listeners.forEach(fn=>fn());}
- constructor(private config:FirebaseConfig|null){}
+ constructor(private config:FirebaseConfig|null,private connection?:{appName:string;setup:(app:FirebaseApp)=>Promise<void>}){}
  async start(){
   if(!this.config){this.state='unavailable';this.message='La conexión con tu copia de iCloud aún no está disponible.';this.emit();return;}
   const startup=++this.epoch;
   try{
-   let app;try{app=getApp('miagenda-firebase');}catch{app=initializeApp(this.config,'miagenda-firebase');}
+   const appName=this.connection?.appName??'miagenda-firebase';
+   let app;try{app=getApp(appName);}catch{app=initializeApp(this.config,appName);}
+   await this.connection?.setup(app);
    const auth=getAuth(app),db=getFirestore(app);this.auth=auth;
    await setPersistence(auth,browserLocalPersistence);if(startup!==this.epoch)return;
    this.stop=onAuthStateChanged(auth,user=>{
@@ -29,8 +31,7 @@ export class MirrorRuntime {
     this.source=new MirrorReader(new MemoryMirrorTransport(null),new MemoryMirrorCache(),'unconnected');
     this.state=user?'signedIn':'signedOut';this.message='';this.emit();if(!user)return;
     const valid=()=>epoch===this.epoch&&auth.currentUser?.uid===user.uid;
-    const read=async(...segments:string[])=>{if(!valid())throw Error('STALE_SESSION');let snapshot;try{snapshot=await getDoc(doc(db,'users',user.uid,'icloudMirror','state',...segments));}catch(error){if((error as {code?:string}).code==='unauthenticated'&&valid()){++this.epoch;this.source.detach();this.local?.dispose();if(this.timer!==null)window.clearInterval(this.timer);if(this.online)window.removeEventListener('online',this.online);this.state='signedOut';this.message='Vuelve a conectar Mi Agenda para actualizar tu copia.';this.emit();}if(!navigator.onLine||(error as {code?:string}).code==='unavailable')throw new MirrorOfflineError();throw error;}if(!valid())throw Error('STALE_SESSION');return snapshot.exists()?snapshot.data():null;};
-    const transport:MirrorReadTransport={readState:()=>read(),readGeneration:id=>read('generations',id),readBucket:hash=>read('buckets',hash),readObject:hash=>read('objects',hash)};
+    const transport=firestoreMirrorTransport(db,user.uid,valid,()=>{++this.epoch;this.source.detach();this.local?.dispose();if(this.timer!==null)window.clearInterval(this.timer);if(this.online)window.removeEventListener('online',this.online);this.state='signedOut';this.message='Vuelve a conectar Mi Agenda para actualizar tu copia.';this.emit();});
     const local=new LocalMirrorSession(`${this.config!.projectId}:${user.uid}`,transport,valid,reader=>{if(valid()){this.source=reader;this.emit();}});this.local=local;
     const refresh=async()=>{try{const result=await local.refresh();if(valid()){this.message=result&&!result.valid?'No se pudo validar la copia. Se conserva la última sincronización disponible.':'';this.emit();}}catch{if(valid()){this.message='La copia remota no está disponible. Se conserva la última copia validada.';this.emit();}}};
     void local.boot().catch(()=>{}).then(()=>{if(!valid())return;this.online=()=>{void refresh();};window.addEventListener('online',this.online);this.timer=window.setInterval(()=>{if(navigator.onLine)void refresh();},60000);return refresh();});

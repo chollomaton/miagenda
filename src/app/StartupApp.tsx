@@ -3,11 +3,12 @@ import {firebaseConfig} from '../cloud/FirebaseConfig';
 import {MirrorRuntime} from '../mirror/MirrorRuntime';
 import {MirrorApp} from '../mirror/MirrorApp';
 import {Dialog} from '../components/Dialog';
+const emulatorFactory=import.meta.env.DEV?await import('../mirror/emulatorDev'):null;
 const MirrorPreview=import.meta.env.DEV?lazy(()=>import('../mirror/MirrorPreview').then(module=>({default:module.MirrorPreview}))):null;
 export const AppMode='icloudMirrorReadonly' as const;
 export function mirrorPreviewEnabled(dev:boolean,search:string){return dev&&new URLSearchParams(search).get('mirrorPreview')==='1';}
 export function StartupApp(){
- const [runtime]=useState(()=>new MirrorRuntime(firebaseConfig(import.meta.env)));
+ const [runtime]=useState(()=>emulatorFactory?.emulatorAllowed(import.meta.env.DEV,window.location.hostname,window.location.search)?emulatorFactory.createEmulatorRuntime():new MirrorRuntime(firebaseConfig(import.meta.env)));
  useSyncExternalStore(runtime.subscribe,()=>runtime.revision);
  const preview=mirrorPreviewEnabled(import.meta.env.DEV,window.location.search);
  useEffect(()=>{if(!preview)void runtime.start();return ()=>runtime.dispose();},[runtime,preview]);

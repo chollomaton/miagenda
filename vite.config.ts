@@ -10,7 +10,7 @@ export default defineConfig(({command}) => ({
       return html
         .replace("script-src 'self'", "script-src 'self' 'nonce-"+localNoncePlaceholder+"'")
         .replace("style-src 'self'", "style-src 'self' 'nonce-"+localNoncePlaceholder+"'")
-        .replace("connect-src 'self'", "connect-src 'self' ws://127.0.0.1:* ws://localhost:*")
+        .replace("connect-src 'self'", "connect-src 'self' ws://127.0.0.1:* ws://localhost:* http://127.0.0.1:18080 http://127.0.0.1:19099")
         .replaceAll(localNoncePlaceholder,nonce);
     }},
   }],
