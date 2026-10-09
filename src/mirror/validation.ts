@@ -44,7 +44,7 @@ export function validateEntity(value: unknown): asserts value is MirrorEntity {
   if('recurrenceMode' in p)require(p.recurrenceMode==='materialized'||p.recurrenceMode==='series'&&!p.isEvent,'INVALID_RECURRENCE_MODE');
   if('occurrence' in p){const o=keys(p.occurrence,['originalStart','detached']);optionalDate(o.originalStart);bool(o.detached);require(p.isEvent===true&&(!o.detached||o.originalStart!==null),'INVALID_OCCURRENCE');}
   if(p.externalID!==null)id(p.externalID);id(p.calendarID);text(p.calendarTitle,500);text(p.title,500);text(p.notes);if(p.location!==null)text(p.location,2000);
-  if(p.url!==null){text(p.url,4000);require(!p.url||!!safeURL(p.url)||/^miagenda:\/\/(timeblock|task)\/[a-zA-Z0-9-]+$/.test(p.url),'INVALID_URL');}
+  if(p.url!==null){text(p.url,4000);require(!p.url||!!safeURL(p.url)||/^miagenda:\/\/(timeblock|task)\/[a-zA-Z0-9-]+$/.test(p.url)||/^addressbook:\/\/[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}:ABPerson$/.test(p.url),'INVALID_URL');}
   for(const key of ['isEvent','allDay','completed','readOnly'])bool(p[key]);
   for(const key of ['start','end','completionDate'])optionalDate(p[key]);date(p.modifiedAt);integer(p.priority,0,9);
   if(p.isEvent)require(p.start!==null&&p.end!==null&&(p.end as string)>(p.start as string),'INVALID_RANGE');

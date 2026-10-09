@@ -1,4 +1,5 @@
 import {describe,it,expect} from 'vitest';
+import {safeURL} from '../src/models/entities';
 import {createHash} from 'node:crypto';
 import fixture from './fixtures/mirror/full-snapshot.json';
 import golden from './fixtures/mirror/golden-hashes.json';
@@ -10,6 +11,16 @@ export const entities=fixture.entities as MirrorEntity[];
 export const source=fixture.source as MirrorSourceInfo;
 export const stamp='2026-10-08T12:00:00.000Z';
 describe('mirror canonical wire',()=>{
+ it('preserves exact Apple contact references as inert text and rejects other opaque URLs',()=>{
+  const entity=structuredClone(entities.find(e=>e.kind==='CalendarItem'&&e.lifecycle==='active')!);
+  if(entity.kind!=='CalendarItem'||entity.lifecycle!=='active')throw Error('fixture');
+  const contact='addressbook://00000000-0000-0000-0000-000000000001:ABPerson';
+  entity.payload.url=contact;expect(()=>validateEntity(entity)).not.toThrow();expect(safeURL(contact)).toBe('');
+  for(const url of [contact+'/extra','addressbook://invalid:ABPerson','javascript:alert(1)','file:///private/example']){
+   entity.payload.url=url;expect(()=>validateEntity(entity)).toThrow('INVALID_URL');
+  }
+ });
+
  it('sorts keys, normalizes undefined/null and -0 with UTF-8 golden hash',async()=>{
   const value={z:undefined,b:'á🌍',a:-0};expect(canonicalJSON(value)).toBe('{"a":0,"b":"á🌍","z":null}');
   expect(await sha256(value)).toBe(createHash('sha256').update('{"a":0,"b":"á🌍","z":null}','utf8').digest('hex'));
