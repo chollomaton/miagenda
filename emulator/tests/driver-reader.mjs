@@ -4,7 +4,13 @@ import {chromium} from 'playwright';
 const [authPath,reportPath]=process.argv.slice(2);
 assert(process.env.MIAGENDA_EMULATOR==='1'&&authPath&&reportPath);
 const auth=JSON.parse(await readFile(authPath,'utf8'));
-const response=await fetch('http://127.0.0.1:18081/status',{signal:AbortSignal.timeout(15000),method:'POST',headers:{Authorization:'Bearer '+auth.publisher.idToken,'Content-Type':'application/json'},body:JSON.stringify({ownerUID:auth.owner.localId})});assert(response.ok);const status=await response.json();assert(status.state?.currentGeneration,'Native driver has not published');
+let status;
+for(let attempt=0;attempt<120;attempt++){
+ const response=await fetch('http://127.0.0.1:18081/status',{signal:AbortSignal.timeout(15000),method:'POST',headers:{Authorization:'Bearer '+auth.publisher.idToken,'Content-Type':'application/json'},body:JSON.stringify({ownerUID:auth.owner.localId})});assert(response.ok);status=await response.json();
+ if(status.state?.publisherID===auth.grant.publisherID)break;
+ await new Promise(resolve=>setTimeout(resolve,1000));
+}
+assert(status.state?.publisherID===auth.grant.publisherID,'Native driver has not published for the current grant');
 const browser=await chromium.launch({executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',headless:true});
 try{
  const page=await browser.newPage({viewport:{width:1440,height:1000}});let errors=0,external=0;page.on('pageerror',()=>errors++);await page.route('https://**',route=>{external++;return route.abort();});
