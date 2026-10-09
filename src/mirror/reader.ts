@@ -28,6 +28,7 @@ export class MirrorReader implements AgendaDataSource {
  getSnapshot=()=>this.revision;
  private emit(){this.revision++;this.listeners.forEach(fn=>fn());}
  private queue<T>(fn:()=>Promise<T>):Promise<T>{const next=this.tail.then(fn);this.tail=next.catch(()=>{});return next;}
+ markOffline(){if(!this.detached){this.offline=true;this.emit();}}
  detach(){this.detached=true;this.epoch++;this.current=null;this.issues=[];this.emit();}
  async boot(){const epoch=this.epoch;return this.queue(async()=>{
   let record;try{record=await this.cache.load();}catch{if(!this.detached&&epoch===this.epoch&&this.sessionValid()){this.issues=['MIRROR_CACHE_READ_FAILED'];this.emit();}return;}if(this.detached||epoch!==this.epoch||!this.sessionValid())return;
