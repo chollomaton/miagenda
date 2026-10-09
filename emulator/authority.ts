@@ -62,3 +62,10 @@ export async function gc(uid:string,owner:string){identifier(owner);if(uid!==own
  for(const d of doomed.slice(0,100))tx.delete(d.ref);
  return {result:'collected',deleted:Math.min(doomed.length,100),blocksPublication:false};
 });}
+
+/** Publisher-scoped read for the DEBUG continuous driver; no owner credentials are returned. */
+export async function publisherStatus(uid:string,owner:string){identifier(owner);return db.runTransaction(async tx=>{
+ const g=authorized((await tx.get(control(owner))).data() as Grant|undefined,uid,owner);
+ const state=(await tx.get(db.doc(root(owner)))).data()??null;
+ return {grant:{ownerUID:g.ownerUID,publisherUID:g.publisherUID,publisherID:g.publisherID,leaseExpiresAt:g.leaseExpiresAt.toDate().toISOString()},state};
+});}

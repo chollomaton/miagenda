@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {getApp} from 'firebase-admin/app';
 import {getFirestore,Timestamp} from 'firebase-admin/firestore';
-import {begin,claim,confirm,manage,publish,stage,activate,gc,assertIsolation} from './authority';
+import {begin,claim,confirm,manage,publish,stage,activate,gc,publisherStatus,assertIsolation} from './authority';
 import type {WireBundle} from './authority';
 import {buildGeneration} from '../src/mirror/generation';
 const db=getFirestore(getApp('mirror-local-authority'));
@@ -32,3 +32,11 @@ test('GC of staged generation makes later activation fail without changing curre
 test('forged content hashes and surplus objects cannot stage',async()=>{const f=await setup();const bad=structuredClone(f.b);bad.objects['0'.repeat(64)]=Object.values(bad.objects)[0];await assert.rejects(stage(pub,owner,bad),/EXTRA_CONTENT/);const corrupt=structuredClone(f.b);Object.values(corrupt.objects)[0].id='corrupted';await assert.rejects(stage(pub,owner,corrupt),/INVALID_OBJECT/);assert.equal((await stateRef.get()).exists,false);});
 
 test('previous generation remains fully recoverable after GC',async()=>{const f=await setup();await publish(pub,owner,f.b);const second=await publish(pub,owner,await bundle(f.publisherID,'g2',true));await gc(owner,owner);const recovered=await activate(pub,owner,'g1',second.state);assert.equal(recovered.state.currentGeneration,'g1');assert.equal(recovered.state.previousGeneration,'g2');});
+
+test('continuous driver status is publisher scoped and rejects revocation and stale leases',async()=>{
+ const f=await setup();assert.equal((await publisherStatus(pub,owner)).state,null);
+ await assert.rejects(publisherStatus(owner,owner));await assert.rejects(publisherStatus('third',owner));
+ await publish(pub,owner,f.b);const status=await publisherStatus(pub,owner);assert.equal(status.state?.currentGeneration,'g1');assert.equal(status.grant.publisherID,f.publisherID);
+ await grantRef.update({leaseExpiresAt:Timestamp.fromMillis(1)});await assert.rejects(publisherStatus(pub,owner));
+ await grantRef.update({leaseExpiresAt:Timestamp.fromMillis(Date.now()+60000),revokedAt:Timestamp.now()});await assert.rejects(publisherStatus(pub,owner));
+});

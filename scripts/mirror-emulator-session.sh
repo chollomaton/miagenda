@@ -12,7 +12,7 @@ if [[ "${1:-}" == tests ]]; then
  ./node_modules/.bin/tsc -p emulator/tsconfig.json
  exit
 fi
-[[ "${1:-}" == e2e ]] || { echo 'Use tests or e2e native-repo-path'; exit 2; }
+[[ "${1:-}" == e2e || "${1:-}" == real-e2e ]] || { echo 'Use tests or e2e native-repo-path'; exit 2; }
 mirror_native="${2:?Pass isolated native repository}"
 [[ "$(git -C "$mirror_native" branch --show-current)" == feature/1.2-icloud-readonly-mirror ]] || exit 2
 swift build --package-path "$mirror_native/MirrorPublisher"
@@ -25,5 +25,11 @@ for mirror_attempt in {1..60}; do
  if curl -s --max-time 1 http://127.0.0.1:18081/ >/dev/null && curl -s --max-time 1 http://127.0.0.1:15173/miagenda/ >/dev/null; then break; fi
  sleep 0.25
 done
-node emulator/tests/e2e.mjs "$mirror_native"
-node emulator/tests/e2e.mjs "$mirror_native"
+if [[ "${1:-}" == real-e2e ]]; then
+ for mirror_repeat in 1 2 3; do
+  node emulator/tests/real-input.mjs "$mirror_native" "$MIAGENDA_LOCAL_REAL_INPUT" "${MIAGENDA_LOCAL_REAL_REPORT%.json}-$mirror_repeat.json"
+ done
+else
+ node emulator/tests/e2e.mjs "$mirror_native"
+ node emulator/tests/e2e.mjs "$mirror_native"
+fi

@@ -7,6 +7,11 @@ if [[ -n "${GOOGLE_APPLICATION_CREDENTIALS:-}" ]]; then echo 'Remove real creden
 case "${1:-}" in
  start) exec emulator/node_modules/.bin/firebase emulators:start --config emulator/firebase.json --project demo-miagenda-mirror --only firestore,auth ;;
  tests) exec emulator/node_modules/.bin/firebase emulators:exec --config emulator/firebase.json --project demo-miagenda-mirror --only firestore,auth 'bash scripts/mirror-emulator-session.sh tests' ;;
+ real-e2e)
+  export MIAGENDA_SYNTHETIC_NATIVE_PATH="${2:?Pass isolated native repository}"
+  export MIAGENDA_LOCAL_REAL_INPUT="${3:?Pass private snapshot path}"
+  export MIAGENDA_LOCAL_REAL_REPORT="${4:?Pass sanitized report path}"
+  exec emulator/node_modules/.bin/firebase emulators:exec --config emulator/firebase.json --project demo-miagenda-mirror --only firestore,auth 'bash scripts/mirror-emulator-session.sh real-e2e "$MIAGENDA_SYNTHETIC_NATIVE_PATH"' ;;
  e2e)
   mirror_native="${2:?Pass isolated native repository}"
   # No shell interpolation of the supplied repository path into the CLI command.
