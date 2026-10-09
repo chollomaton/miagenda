@@ -29,7 +29,7 @@ export class MirrorRuntime {
     this.source=new MirrorReader(new MemoryMirrorTransport(null),new MemoryMirrorCache(),'unconnected');
     this.state=user?'signedIn':'signedOut';this.message='';this.emit();if(!user)return;
     const valid=()=>epoch===this.epoch&&auth.currentUser?.uid===user.uid;
-    const read=async(...segments:string[])=>{if(!valid())throw Error('STALE_SESSION');let snapshot;try{snapshot=await getDoc(doc(db,'users',user.uid,'icloudMirror','state',...segments));}catch(error){if(!navigator.onLine||(error as {code?:string}).code==='unavailable')throw new MirrorOfflineError();throw error;}if(!valid())throw Error('STALE_SESSION');return snapshot.exists()?snapshot.data():null;};
+    const read=async(...segments:string[])=>{if(!valid())throw Error('STALE_SESSION');let snapshot;try{snapshot=await getDoc(doc(db,'users',user.uid,'icloudMirror','state',...segments));}catch(error){if((error as {code?:string}).code==='unauthenticated'&&valid()){++this.epoch;this.source.detach();this.local?.dispose();if(this.timer!==null)window.clearInterval(this.timer);if(this.online)window.removeEventListener('online',this.online);this.state='signedOut';this.message='Vuelve a conectar Mi Agenda para actualizar tu copia.';this.emit();}if(!navigator.onLine||(error as {code?:string}).code==='unavailable')throw new MirrorOfflineError();throw error;}if(!valid())throw Error('STALE_SESSION');return snapshot.exists()?snapshot.data():null;};
     const transport:MirrorReadTransport={readState:()=>read(),readGeneration:id=>read('generations',id),readBucket:hash=>read('buckets',hash),readObject:hash=>read('objects',hash)};
     const local=new LocalMirrorSession(`${this.config!.projectId}:${user.uid}`,transport,valid,reader=>{if(valid()){this.source=reader;this.emit();}});this.local=local;
     const refresh=async()=>{try{const result=await local.refresh();if(valid()){this.message=result&&!result.valid?'No se pudo validar la copia. Se conserva la última sincronización disponible.':'';this.emit();}}catch{if(valid()){this.message='La copia remota no está disponible. Se conserva la última copia validada.';this.emit();}}};
@@ -37,6 +37,6 @@ export class MirrorRuntime {
    },()=>{++this.epoch;this.source.detach();this.state='unavailable';this.message='No se pudo restaurar la conexión.';this.emit();});
   }catch{if(startup===this.epoch){this.state='unavailable';this.message='No se pudo restaurar la conexión.';this.emit();}}
  }
- async login(){if(!this.auth)return;try{await signInWithPopup(this.auth,new GoogleAuthProvider());}catch{this.message='No se completó la conexión. Puedes volver a intentarlo.';this.emit();}}
+ async login(){if(!this.auth)return;try{await signInWithPopup(this.auth,new GoogleAuthProvider());if(this.state==='signedOut'&&this.auth.currentUser){this.stop?.();this.stop=null;await this.start();}}catch{this.message='No se completó la conexión. Puedes volver a intentarlo.';this.emit();}}
  dispose(){if(this.timer!==null)window.clearInterval(this.timer);++this.epoch;this.stop?.();this.stop=null;this.source.detach();this.local?.dispose();if(this.online)window.removeEventListener('online',this.online);}
 }

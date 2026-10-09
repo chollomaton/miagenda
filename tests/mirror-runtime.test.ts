@@ -19,3 +19,9 @@ it('does not read Firestore without a session and invokes login only explicitly'
 it('retains an empty readonly dashboard when publication is absent or denied',async()=>{
  sdk.auth.currentUser={uid:'owner-without-publication'};sdk.read.mockResolvedValue({exists:()=>false});const runtime=new MirrorRuntime(config);await runtime.start();await vi.waitFor(()=>expect(sdk.read).toHaveBeenCalled());expect(runtime.state).toBe('signedIn');expect(runtime.source.manifest).toBeNull();runtime.dispose();
 });
+it('an explicit unauthenticated response hides cached data and returns to the minimal gate',async()=>{
+ const {transport}=await setupTransport();sdk.auth.currentUser={uid:'expired-token-owner'};
+ sdk.read.mockImplementation(async(path:string)=>{const parts=path.split('/');const value=parts.length===4?await transport.readState():parts[4]==='generations'?await transport.readGeneration(parts[5]):parts[4]==='buckets'?await transport.readBucket(parts[5]):await transport.readObject(parts[5]);return {exists:()=>value!==null,data:()=>value};});
+ const first=new MirrorRuntime(config);await first.start();await vi.waitFor(()=>expect(first.source.entities.length).toBeGreaterThan(0));first.dispose();
+ sdk.read.mockRejectedValue({code:'unauthenticated'});const restored=new MirrorRuntime(config);await restored.start();await vi.waitFor(()=>expect(restored.state).toBe('signedOut'));expect(restored.source.entities).toEqual([]);expect(sdk.popup).not.toHaveBeenCalled();restored.dispose();
+});
