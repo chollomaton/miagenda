@@ -198,3 +198,13 @@
 .mirror-shell .sidebar nav button[aria-current=page] .icon{color:white}
 .mirror-shell .sidebar nav button[aria-current=page] .badge{background:#ffffff26;color:white}
 .mirror-calendar-event.is-reminder{border-color:var(--blue);background:color-mix(in srgb,var(--blue) 10%,var(--surface-card))}
+
+@media(min-width:1100px){
+ #mirror-main:has(>.mirror-calendar-view)>.mirror-meta{display:none}
+ .mirror-calendar-heading h2{font-size:28px}
+ .mirror-calendar-toolbar{margin:0 0 8px}
+ .mirror-calendar-view>.mirror-scope{font-size:10px;margin:6px 0 12px}
+ .mirror-calendar.mode-mes .mirror-day{min-height:122px}
+ .mirror-calendar.mode-mes .mirror-calendar-event small{display:none}
+ .mirror-calendar-day-detail{align-self:start;min-height:500px}
+}
