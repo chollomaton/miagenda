@@ -1,4 +1,4 @@
-import {beforeEach,expect,it,vi} from 'vitest';
+import {afterEach,beforeEach,expect,it,vi} from 'vitest';
 import {fireEvent,render,screen,waitFor} from '@testing-library/react';
 import {MemoryMirrorCache} from '../src/mirror/cache';
 import {MirrorReader} from '../src/mirror/reader';
@@ -19,4 +19,26 @@ it('shows only a minimal auth gate over the dashboard and removes it after login
 });
 it('requires both development and an explicit preview URL',()=>{
  expect(mirrorPreviewEnabled(true,'')).toBe(false);expect(mirrorPreviewEnabled(true,'?mirrorPreview=1')).toBe(true);expect(mirrorPreviewEnabled(false,'?mirrorPreview=1')).toBe(false);expect(mirrorPreviewEnabled(true,'?mirrorPreview=true')).toBe(false);
+});
+
+afterEach(()=>{vi.unstubAllEnvs();vi.unstubAllGlobals();});
+it('registers the production worker from the mirror entrypoint under the Pages base',async()=>{
+ vi.stubEnv('PROD',true);vi.stubEnv('BASE_URL','/miagenda/');
+ const register=vi.fn(async()=>Object.assign(new EventTarget(),{waiting:null,installing:null}));
+ vi.stubGlobal('navigator',Object.create(navigator,{onLine:{value:true},serviceWorker:{value:{register}}}));
+ fixture.runtime={source:new MirrorReader(new MemoryMirrorTransport(null),new MemoryMirrorCache(),'empty'),state:'checking',revision:0,message:'',subscribe:()=>()=>{},start:vi.fn(),dispose:vi.fn()};
+ render(<StartupApp/>);window.dispatchEvent(new Event('load'));
+ await waitFor(()=>expect(register).toHaveBeenCalledWith('/miagenda/service-worker.js',{scope:'/miagenda/',updateViaCache:'none'}));
+});
+
+it('explains an offline first visit without offering a broken login',()=>{
+ vi.stubGlobal('navigator',Object.create(navigator,{onLine:{value:false}}));
+ fixture.runtime={source:new MirrorReader(new MemoryMirrorTransport(null),new MemoryMirrorCache(),'empty'),state:'signedOut',revision:0,message:'',subscribe:()=>()=>{},start:vi.fn(),dispose:vi.fn()};
+ render(<StartupApp/>);expect(screen.getByText(/Sin conexión. No hay una sesión local/)).toBeInTheDocument();expect(screen.getByText('Sin conexión. No hay una copia validada disponible en este navegador.')).toBeInTheDocument();expect(screen.getByRole('button',{name:'Entrar con Google'})).toBeDisabled();
+});
+it('does not register the production worker in development',()=>{
+ vi.stubEnv('PROD',false);const register=vi.fn();
+ vi.stubGlobal('navigator',Object.create(navigator,{onLine:{value:true},serviceWorker:{value:{register}}}));
+ fixture.runtime={source:new MirrorReader(new MemoryMirrorTransport(null),new MemoryMirrorCache(),'empty'),state:'checking',revision:0,message:'',subscribe:()=>()=>{},start:vi.fn(),dispose:vi.fn()};
+ render(<StartupApp/>);window.dispatchEvent(new Event('load'));expect(register).not.toHaveBeenCalled();
 });

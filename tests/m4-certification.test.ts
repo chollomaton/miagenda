@@ -20,7 +20,7 @@ it('aligns installation identity, scope, start and shortcuts at GitHub Pages',as
   const png=await readFile('public/'+icon.src);expect(png.readUInt32BE(16)+'x'+png.readUInt32BE(20)).toBe(icon.sizes);
  }
  expect(await readFile('index.html','utf8')).toContain('apple-touch-icon');
- expect(await readFile('index.html','utf8')).toContain('rel="manifest" href="./manifest.webmanifest?install=1.1.0"');
+ expect(await readFile('index.html','utf8')).toContain('rel="manifest" href="%BASE_URL%manifest.webmanifest"');
 });
 it('detects already waiting and newly installed workers, removes listeners',()=>{
  const reg=new EventTarget() as ServiceWorkerRegistration;
@@ -43,13 +43,13 @@ it('protects mobile input zoom, touch controls and scrolling at 393px',async()=>
 
 it('uses the native Apple icon at its declared 180px size',async()=>{
  const html=await readFile('index.html','utf8');
- expect(html).toContain('rel="apple-touch-icon" sizes="180x180" href="./icons/miagenda-touch-1.1.0.png"');
+ expect(html).toContain('rel="apple-touch-icon" sizes="180x180" href="%BASE_URL%icons/miagenda-touch-1.1.0.png"');
  const links=[...html.matchAll(/<link\b[^>]*rel="apple-touch-icon"[^>]*>/g)];
  expect(links).toHaveLength(1);
  const href=links[0][0].match(/href="([^"]+)"/)?.[1];
- expect(href).toBe('./icons/miagenda-touch-1.1.0.png');
+ expect(href).toBe('%BASE_URL%icons/miagenda-touch-1.1.0.png');
  expect(href).not.toMatch(/agenda-native|apple-touch-icon\.png|\?|\.svg/);
- const png=await readFile('public/'+href!.slice(2));
+ const png=await readFile('public/'+href!.replace('%BASE_URL%',''));
  expect(png.subarray(0,8)).toEqual(Buffer.from([137,80,78,71,13,10,26,10]));
  expect([png.readUInt32BE(16),png.readUInt32BE(20)]).toEqual([180,180]);
  expect(png[25]).toBe(2); // RGB: iOS receives no transparent corners

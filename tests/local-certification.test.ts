@@ -76,8 +76,8 @@ it('FEB_29 yearly recurrence skips non leap years',()=>{
 });
 it('SW_UPDATE_PRESERVES_DATA activation only removes obsolete shell caches',async()=>{
  const s=await open();await s.create('QuickNote',{text:'private'});const before=s.snapshot();let activate!:(e:{waitUntil:(p:Promise<unknown>)=>void})=>void;
- const remove=vi.fn(async(key:string)=>key.length>0);const cache={keys:async()=>['miagenda-shell-old','miagenda-shell-new','private-data','other-app'],delete:remove};
- new Function('self','caches','indexedDB',generateWorker(['./'],'new'))({addEventListener:(name:string,fn:typeof activate)=>{if(name==='activate')activate=fn}},cache,new Proxy({},{get(){throw Error('SW must not access IDB')}}));
+ const claim=vi.fn(async()=>{});const remove=vi.fn(async(key:string)=>key.length>0);const cache={keys:async()=>['miagenda-shell-old','miagenda-shell-new','private-data','other-app'],delete:remove};
+ new Function('self','caches','indexedDB',generateWorker(['./'],'new'))({clients:{claim},addEventListener:(name:string,fn:typeof activate)=>{if(name==='activate')activate=fn}},cache,new Proxy({},{get(){throw Error('SW must not access IDB')}}));
  let pending:Promise<unknown>|undefined;activate({waitUntil:p=>{pending=p}});await pending;
- expect(remove.mock.calls).toEqual([['miagenda-shell-old']]);expect(await s.persistence.load()).toEqual(before);
+ expect(remove.mock.calls).toEqual([['miagenda-shell-old']]);expect(claim).toHaveBeenCalledOnce();expect(await s.persistence.load()).toEqual(before);
 });

@@ -50,3 +50,15 @@ for(const windows of [1,2])it('activates only explicit request from the sole ope
  const event={data:{type:'unrelated'},source:{id:'0',postMessage:()=>{blocked++}},waitUntil:(p:Promise<unknown>)=>{pending=p}};
  message(event);expect(activated).toBe(0);expect(pending).toBeUndefined();message({...event,data:{type:'ACTIVATE_WHEN_SAFE'}});await pending;expect(activated).toBe(windows===1?1:0);expect(blocked).toBe(windows===2?1:0);
 });
+
+it('falls back only for explicit app navigation routes inside the Pages scope',async()=>{
+ let handler!:(e:{request:{url:string;method:string;mode:string};respondWith:(p:Promise<unknown>)=>void})=>void;
+ const lookups:string[]=[];
+ runInNewContext(generateWorker(['./index.html'],'deep'),{URL,self:{location:{origin:'https://example.test'},registration:{scope:'https://example.test/miagenda/'},addEventListener:(name:string,fn:typeof handler)=>{if(name==='fetch')handler=fn}},caches:{open:async()=>({match:async(url:string)=>{lookups.push(url);return 'shell'}})}});
+ for(const path of ['notes','calendar/','settings']){let response:Promise<unknown>|undefined;handler({request:{url:'https://example.test/miagenda/'+path,method:'GET',mode:'navigate'},respondWith:p=>{response=p}});expect(await response).toBe('shell');}
+ expect(lookups).toEqual(Array(3).fill('https://example.test/miagenda/index.html'));
+ for(const path of ['api/tasks','private','notes?token=private','../notes']){let intercepted=false;handler({request:{url:'https://example.test/miagenda/'+path,method:'GET',mode:'navigate'},respondWith:()=>{intercepted=true}});expect(intercepted).toBe(false);}
+});
+it('keeps the installed app identity and start URL in the Pages scope',async()=>{
+ const {readFile}=await import('node:fs/promises');const manifest=JSON.parse(await readFile('public/manifest.webmanifest','utf8'));const base='https://example.test/miagenda/';expect(new URL(manifest.scope,base).href).toBe(base);expect(new URL(manifest.start_url,base).href).toBe(base+'?pwa=1.1.0');expect(manifest.id).toBe('/miagenda/?app-id=1.1.0');
+});
