@@ -1,3 +1,4 @@
+import {diagnostic} from './pairingDiagnostic';
 import {ProductionOwnerPairing} from './productionPairing';
 import {getApp,initializeApp} from 'firebase/app';
 import {browserLocalPersistence,getAuth,GoogleAuthProvider,onAuthStateChanged,setPersistence,signInWithPopup} from 'firebase/auth';
@@ -31,6 +32,7 @@ export class MirrorRuntime {
    this.stop=onAuthStateChanged(auth,user=>{
     const epoch=++this.epoch;this.source.detach();this.local?.dispose();this.local=null;if(this.online)window.removeEventListener('online',this.online);this.online=null;if(this.timer!==null)window.clearInterval(this.timer);this.timer=null;
     this.source=new MirrorReader(new MemoryMirrorTransport(null),new MemoryMirrorCache(),'unconnected');
+    diagnostic?.emit(user?.providerData.some(p=>p.providerId==='google.com')?'owner-session-restored':'owner-session-missing');
     this.state=user?'signedIn':'signedOut';this.message='';this.emit();if(!user)return;
     const valid=()=>epoch===this.epoch&&auth.currentUser?.uid===user.uid;
     const transport=firestoreMirrorTransport(db,user.uid,valid,()=>{++this.epoch;this.source.detach();this.local?.dispose();if(this.timer!==null)window.clearInterval(this.timer);if(this.online)window.removeEventListener('online',this.online);this.state='signedOut';this.message='Vuelve a conectar Mi Agenda para actualizar tu copia.';this.emit();});
