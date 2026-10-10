@@ -7,7 +7,7 @@ for attempt in {1..60}; do
  if curl -s --max-time 1 http://127.0.0.1:15173/miagenda/ >/dev/null; then break; fi
  sleep 0.25
 done
-for repeat in 1 2 3; do
+for repeat in 1 2 3 4 5; do
  node --test preprod/rules.test.mjs
  node preprod/e2e.mjs "$MIAGENDA_PREPROD_NATIVE"
 done
