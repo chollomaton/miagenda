@@ -19,3 +19,11 @@ export async function withoutOwner(secret:string){
  return failures;
 }
 export async function restoreOwner(){await signInWithCredential(getAuth(app()),GoogleAuthProvider.credential(JSON.stringify({sub:'preprod-owner',email:'preprod-owner@example.test',email_verified:true})));}
+
+export async function diagnosticConfirm(secret:string){
+ const value=app();try{await new ProductionOwnerPairing(getFirestore(value),getAuth(value),true).confirm(secret);return 'committed';}catch{return 'failed';}
+}
+
+export function diagnosticOwnerUID(){return getAuth(app()).currentUser!.uid;}
+
+export async function diagnosticGrantExists(){const value=app();return !!(await new ProductionOwnerPairing(getFirestore(value),getAuth(value),true).status());}
