@@ -212,3 +212,5 @@
 .mirror-shell .workspace.tone-Task .mirror-list-surface{padding:0;border:0;background:transparent;box-shadow:none}
 .mirror-shell .workspace.tone-Task .mirror-list-surface .mirror-row{border:1px solid var(--border-subtle);border-radius:14px;min-height:56px;padding:10px 12px;margin-bottom:6px}
 @media(min-width:700px){.mirror-shell .workspace.tone-Task .page-header h2{font-size:28px}}
+
+.mirror-update .update-notice{position:fixed;top:max(12px,env(safe-area-inset-top));right:12px;z-index:40;max-width:min(420px,calc(100vw - 24px));padding:16px;background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:0 4px 20px #0002}
