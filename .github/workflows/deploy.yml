@@ -23,6 +23,8 @@ jobs:
       - run: npm ci
       - run: npm run check
         env:
+          VITE_MIRROR_ENABLED: "1"
+          VITE_MIRROR_ENVIRONMENT: production
           VITE_CLOUD_BACKEND: firebase
           VITE_FIREBASE_API_KEY: ${{ vars.FIREBASE_API_KEY }}
           VITE_FIREBASE_AUTH_DOMAIN: ${{ vars.FIREBASE_AUTH_DOMAIN }}

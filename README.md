@@ -1,3 +1,7 @@
+# Mi Agenda 1.2.0
+
+Web iCloud de solo lectura y publisher nativo. Consulta [operación, limitaciones y rollback](RELEASE_NOTES_1.2.md). La configuración productiva de Rules está en `preprod/firestore.rules` y se despliega con `preprod/firebase.json`; el archivo raíz conserva las Rules 1.1 para rollback.
+
 # Mi Agenda
 
 Mi Agenda 1.1.0 — aplicación web/PWA local-first, esquema V1. Node 24.
