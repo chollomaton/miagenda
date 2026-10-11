@@ -13,16 +13,33 @@
  --surface-window:var(--bg);--surface-sidebar:var(--nav);--surface-card:var(--card);
  --text-primary:var(--text);--text-secondary:var(--muted);
  --text-tertiary:light-dark(#787880,#929298);--purple:var(--magenta);
- --border-subtle:color-mix(in srgb,var(--muted) 6.5%,transparent);
- --radius-card:16px;--radius-compact:9px;--radius-row:11px;--radius-section:14px;--radius-dialog:18px;
+ --border-subtle:color-mix(in srgb,var(--muted) 7%,transparent);
+ --radius-card:16px;--radius-compact:10px;--radius-row:11px;--radius-section:14px;--radius-dialog:18px;
  --sidebar-width:225px;--page-padding:22px;--dashboard-padding-y:18px;--dashboard-max-width:1480px;
- --gap:14px;--column-gap:12px;--card-padding:17px;
+ --gap:14px;--column-gap:12px;--card-padding:18px;
  --font-system:-apple-system,BlinkMacSystemFont,system-ui,"Segoe UI",sans-serif;
  --font-body:13px;--font-caption:11px;--font-dashboard-title:38px;--font-card-title:18px;
- --glyph-medium:42px;--glyph-large:50px;
+ --glyph-medium:44px;--glyph-large:50px;
  --tone:var(--blue);font-family:var(--font-system);
  font-size:var(--font-body);color:var(--text);background:var(--bg);font-synthesis:none;
 }
 :root[data-theme=dark]{color-scheme:dark}
 :root[data-theme=light]{color-scheme:light}
 @media(prefers-color-scheme:dark){:root:not([data-theme=light]):not([data-theme=dark]){color-scheme:dark}:root[data-theme=system]{color-scheme:dark}}
+
+/* Audited Mi Agenda 8.x dimensions. AppKit materials/colors remain approximations. */
+:root {
+ --native-page-padding:24px;--native-section-gap:16px;--native-page-bottom:50px;
+ --sidebar-padding-top:14px;--sidebar-brand-inset:6px;--sidebar-drawer-width:260px;
+ --font-brand:19px;--glyph-brand:38px;--font-detail-title:23px;--font-mobile-title:32px;
+ --settings-sidebar-width:225px;--settings-padding-x:34px;--settings-padding-y:30px;
+ --native-editor-width:720px;--native-editor-height:780px;--desktop-overlay-padding:25px;
+ --settings-max-width:1050px;--settings-card-padding:22px;--font-settings-title:34px;
+ --radius-control:9px;--control-height:34px;--control-padding-x:11px;--control-padding-y:7px;
+ --control-gap:7px;--row-height:46px;--row-padding-y:7px;--row-padding-x:5px;--glyph-row-small:13px;
+ --search-width:325px;--touch-height:44px;--mobile-page-padding:16px;--mobile-bottom-space:105px;
+ --mobile-topbar-height:56px;--motion-duration:150ms;
+ --calendar-cell-height:122px;--calendar-cell-mobile-height:105px;--calendar-week-height:450px;
+ --calendar-week-mobile-width:100px;--calendar-accent-width:3px;--calendar-event-margin:4px;--radius-calendar-event:4px;
+ --segmented-inset:2px;--source-control-height:28px;--segmented-shadow:0 1px 3px #0001;
+}

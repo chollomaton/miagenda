@@ -1,0 +1,40 @@
+{
+  "id": "reminder|apple-002",
+  "kind": "CalendarItem",
+  "lifecycle": "active",
+  "payload": {
+    "externalID": "apple-reminder-002",
+    "calendarID": "iCloud-calendar",
+    "calendarTitle": "Mi Agenda",
+    "isEvent": false,
+    "title": "Clase preparada",
+    "notes": "Revisar materiales",
+    "location": null,
+    "url": null,
+    "start": null,
+    "end": null,
+    "allDay": false,
+    "dueComponents": {
+      "date": "2026-10-09",
+      "time": "09:00",
+      "timeZone": "Europe/Madrid"
+    },
+    "startComponents": null,
+    "completed": true,
+    "completionDate": "2026-10-08T10:00:00.000Z",
+    "priority": 1,
+    "alarms": [],
+    "recurrence": [],
+    "readOnly": false,
+    "modifiedAt": "2026-10-08T12:00:00.000Z",
+    "metadata": {
+      "labelID": "clases",
+      "isPinned": false,
+      "isFavorite": false,
+      "courseMode": null,
+      "subtasks": [],
+      "parts": [],
+      "estimatedDurationMinutes": null
+    }
+  }
+}

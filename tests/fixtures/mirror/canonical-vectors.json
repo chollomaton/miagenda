@@ -1,0 +1,53 @@
+[
+  {
+    "input": {
+      "2": "two",
+      "10": "ten",
+      "a": 0
+    },
+    "canonical": "{\"10\":\"ten\",\"2\":\"two\",\"a\":0}",
+    "hash": "fd0703c9e3b01953a0c497d66f84c59b221879a9e4cb0fd7ff42721e9d507db7"
+  },
+  {
+    "input": {
+      "z": "á🌍",
+      "a": "\u0000\b\t\n\f\r\"\\  "
+    },
+    "canonical": "{\"a\":\"\\u0000\\b\\t\\n\\f\\r\\\"\\\\  \",\"z\":\"á🌍\"}",
+    "hash": "b33b371b10236dc7c3f802a3ac9791ea51731080cb45e440c587ad133814059f"
+  },
+  {
+    "input": {
+      "numbers": [
+        -9007199254740991,
+        9007199254740991,
+        0
+      ],
+      "months": [
+        12,
+        1,
+        1
+      ]
+    },
+    "canonical": "{\"months\":[1,12],\"numbers\":[-9007199254740991,9007199254740991,0]}",
+    "hash": "6ea6cac3290301d70182df23eb35d8c4c6b396fbadb9ab32c6f1eb9c9ba537ae"
+  },
+  {
+    "input": {
+      "💡": "idea",
+      "": "private-use"
+    },
+    "canonical": "{\"💡\":\"idea\",\"\":\"private-use\"}",
+    "hash": "c7eae3f08181a1376da65c3983a0a692711ad637f442a1cdb00bf13c3b30f404"
+  },
+  {
+    "input": [
+      null,
+      true,
+      false,
+      "Madrid"
+    ],
+    "canonical": "[null,true,false,\"Madrid\"]",
+    "hash": "89d0f7c1e59dde878d57466ff212e65b801448814f2576c7143826329df5d052"
+  }
+]

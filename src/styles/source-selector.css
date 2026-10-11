@@ -1,0 +1,3 @@
+.source-selector{display:inline-flex;gap:0;background:var(--control);padding:var(--segmented-inset);border-radius:var(--radius-control)}
+.source-selector button{min-height:var(--source-control-height);padding:var(--row-padding-x) var(--control-padding-x);font-size:var(--font-caption);border:0;background:transparent}
+.source-selector button[aria-pressed=true]{background:var(--surface-card);color:var(--text-primary);box-shadow:var(--segmented-shadow)}

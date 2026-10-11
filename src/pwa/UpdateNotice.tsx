@@ -5,7 +5,7 @@ export function UpdateNotice({flush}:{flush:()=>Promise<void>}) {
  useEffect(()=>{
   if(!import.meta.env.PROD||!('serviceWorker' in navigator))return;
   let dispose: (()=>void)|undefined, cancelled=false;
-  const register=()=>{void navigator.serviceWorker.register('./service-worker.js').then(registration=>{if(!cancelled)dispose=watchWaiting(registration,setWorker)}).catch(()=>{});};
+  const register=()=>{void navigator.serviceWorker.register(import.meta.env.BASE_URL+'service-worker.js',{scope:import.meta.env.BASE_URL,updateViaCache:'none'}).then(registration=>{if(!cancelled)dispose=watchWaiting(registration,setWorker)}).catch(()=>{});};
   if(document.readyState==='complete')register();else window.addEventListener('load',register,{once:true});
   return ()=>{cancelled=true;dispose?.();window.removeEventListener('load',register)};
  },[]);

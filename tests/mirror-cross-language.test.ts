@@ -1,0 +1,20 @@
+import {expect,it} from 'vitest';
+import wire from './fixtures/mirror/swift-generation.json';
+import {IsolatedMirrorBackend} from '../src/mirror/isolatedBackend';
+import type {PublicationBundle} from '../src/mirror/isolatedBackend';
+import {buildGeneration} from '../src/mirror/generation';
+import {MirrorReader} from '../src/mirror/reader';
+import {MemoryMirrorCache} from '../src/mirror/cache';
+import {entities,source,stamp} from './fixtures/mirror/helpers';
+import {sha256} from '../src/mirror/canonical';
+it('Swift publication is byte-semantically identical to TS and activates through the isolated authority and web reader',async()=>{
+ const generated=await buildGeneration(entities,source,wire.manifest.generationID,stamp);
+ expect(wire.state).toEqual(generated.state);expect(wire.manifest).toEqual(generated.manifest);
+ expect(wire.objects).toEqual(Object.fromEntries(generated.objects));expect(wire.buckets).toEqual(Object.fromEntries(generated.buckets));
+ for(const [hash,value] of [...Object.entries(wire.objects),...Object.entries(wire.buckets)])expect(await sha256(value)).toBe(hash);
+ const backend=new IsolatedMirrorBackend(()=>Date.parse(stamp),()=>source.publisherID);const {challenge}=await backend.begin('swift-publisher','owner');await backend.confirm('owner',challenge);
+ const bundle={...wire,objects:new Map(Object.entries(wire.objects)),buckets:new Map(Object.entries(wire.buckets))} as PublicationBundle;
+ await backend.publish('swift-publisher','owner',bundle);const cache=new MemoryMirrorCache();const reader=new MirrorReader(backend.reader('owner','owner'),cache,source.publisherID);
+ expect((await reader.refresh()).valid).toBe(true);expect(reader.entities).toHaveLength(entities.length);reader.detach();const offline=new MirrorReader({readState:async()=>{throw Error('offline');},readGeneration:async()=>null,readBucket:async()=>null,readObject:async()=>null},cache,source.publisherID);await offline.boot();expect(offline.entities).toHaveLength(entities.length);expect(offline.freshness.status).toBe('offline');
+});
+it('shared canonical vectors cover numeric keys, controls, unicode ordering and safe integer boundaries',async()=>{const {default:vectors}=await import('./fixtures/mirror/canonical-vectors.json');const {canonicalJSON}=await import('../src/mirror/canonical');for(const v of vectors){expect(canonicalJSON(v.input)).toBe(v.canonical);expect(await sha256(v.input)).toBe(v.hash);}for(const invalid of ['\ud800','\udfff'])expect(()=>canonicalJSON(invalid)).toThrow('MIRROR_INVALID_UNICODE');});

@@ -10,17 +10,11 @@ import {MemoryPersistence} from '../src/offline/Persistence';
 const cloud=vi.hoisted(()=>({loaded:vi.fn(),mounted:vi.fn()}));
 vi.mock('../src/app/CloudApp',()=>{cloud.loaded();return {CloudConnection:()=>{cloud.mounted();return null}}});
 
-it('M5 local startup and IndexedDB entry never execute cloud until requested',async()=>{
+it('M5 readonly startup never loads the legacy editable cloud app',()=>{
  render(<ErrorBoundary><StartupApp/></ErrorBoundary>);
- expect(cloud.loaded).not.toHaveBeenCalled();
- fireEvent.click(screen.getByRole('button',{name:'Abrir agenda local'}));
- await screen.findByRole('navigation',{name:'Secciones'});
- expect(cloud.loaded).not.toHaveBeenCalled();
- fireEvent.click(screen.getByRole('button',{name:'Ajustes'}));
- fireEvent.click(screen.getByRole('button',{name:'Sincronización'}));
- fireEvent.click(screen.getByRole('button',{name:'Entrar con Google'}));
- await waitFor(()=>expect(cloud.mounted).toHaveBeenCalled());
- expect(screen.getByRole('heading',{name:'Ajustes'})).toBeInTheDocument();
+ expect(screen.getByRole('searchbox',{name:'Buscar en iCloud'})).toBeInTheDocument();
+ expect(cloud.loaded).not.toHaveBeenCalled();expect(cloud.mounted).not.toHaveBeenCalled();
+ expect(screen.queryByRole('button',{name:'Abrir agenda local'})).not.toBeInTheDocument();
 });
 it('M5 heavy panels remain dynamic and recovery is mounted only on demand',()=>{
  const source=readFileSync('src/app/App.tsx','utf8');
@@ -30,8 +24,9 @@ it('M5 heavy panels remain dynamic and recovery is mounted only on demand',()=>{
  }
  expect(source).toContain("recoveryOpened&&<Suspense");
  const startup=readFileSync('src/app/StartupApp.tsx','utf8');
- expect(startup).not.toContain('FirebaseRuntime');expect(startup).not.toContain('FirebaseConfig');
- expect(startup).toContain("lazy(()=>import('./CloudApp')");
+ expect(startup).not.toContain('FirebaseRuntime');
+ expect(startup).not.toContain("import('./CloudApp')");
+ expect(startup).toContain('MirrorRuntime');
 });
 it('M5 recovery, templates and calendar load repeatedly without altering stored data',async()=>{
  const store=new AgendaStore(new MemoryPersistence());await store.boot();

@@ -1,0 +1,60 @@
+{
+  "id": "reminder|apple-recurring",
+  "kind": "CalendarItem",
+  "lifecycle": "active",
+  "payload": {
+    "externalID": "apple-reminder-001",
+    "calendarID": "iCloud-calendar",
+    "calendarTitle": "Mi Agenda",
+    "isEvent": false,
+    "title": "Repasar cada semana",
+    "notes": "Revisar materiales",
+    "location": null,
+    "url": null,
+    "start": null,
+    "end": null,
+    "allDay": false,
+    "dueComponents": {
+      "date": "2026-10-09",
+      "time": "09:00",
+      "timeZone": "Europe/Madrid"
+    },
+    "startComponents": null,
+    "completed": false,
+    "completionDate": null,
+    "priority": 1,
+    "alarms": [],
+    "recurrence": [
+      {
+        "frequency": 1,
+        "interval": 1,
+        "endDate": null,
+        "occurrenceCount": 0,
+        "weekdays": [
+          2,
+          4
+        ],
+        "weekNumbers": [
+          0,
+          0
+        ],
+        "monthDays": null,
+        "yearDays": null,
+        "yearWeeks": null,
+        "months": null,
+        "positions": null
+      }
+    ],
+    "readOnly": false,
+    "modifiedAt": "2026-10-08T12:00:00.000Z",
+    "metadata": {
+      "labelID": "clases",
+      "isPinned": false,
+      "isFavorite": false,
+      "courseMode": null,
+      "subtasks": [],
+      "parts": [],
+      "estimatedDurationMinutes": null
+    }
+  }
+}

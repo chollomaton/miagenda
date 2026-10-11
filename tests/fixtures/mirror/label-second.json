@@ -1,0 +1,10 @@
+{
+  "id": "viajes",
+  "kind": "Label",
+  "lifecycle": "active",
+  "payload": {
+    "name": "Viajes",
+    "colorToken": "green",
+    "symbol": "airplane"
+  }
+}
